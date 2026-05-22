@@ -3,21 +3,9 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 
-# 1. Public Homepage View Variants
+# 1. Public Homepage View
 def home(request):
-    return render(request, 'home_option_a.html') # Active default Option A
-
-def home_original(request):
-    return render(request, 'home_original.html')
-
-def home_option_a(request):
-    return render(request, 'home_option_a.html')
-
-def home_option_b(request):
-    return render(request, 'home_option_b.html')
-
-def home_option_c(request):
-    return render(request, 'home_option_c.html')
+    return render(request, 'home.html')
 
 # 2. Onboarding & Authentication Placeholders (Sprint 1+)
 def register(request):
