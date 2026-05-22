@@ -41,26 +41,28 @@
                         
                         <!-- 1. Senior Member Onboarding Form -->
                         <div class="tab-pane fade {% if active_role == 'member' %}show active{% endif %}" id="panel-member" role="tabpanel" aria-labelledby="tab-member">
-                            <form method="POST" action="{% url 'register' %}" onsubmit="event.preventDefault(); alert('Member Intake Submitted Successfully!');">
+                            <form id="form-member" method="POST" action="{% url 'register' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="role" value="member">
                                 <h3 class="fw-bold fs-4 mb-3 text-primary"><i class="bi bi-heart-pulse-fill me-2"></i>Senior Member Meal Request</h3>
                                 <p class="text-muted small mb-4">Provide personal details, allergies, and delivery address to determine GIS radius eligibility.</p>
                                 
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label for="memberName" class="form-label fw-bold">Full Name</label>
-                                        <input type="text" class="form-control form-control-lg border-light bg-light" id="memberName" placeholder="e.g. Robert Smith" required>
+                                        <input type="text" class="form-control form-control-lg border-light bg-light" id="memberName" name="memberName" placeholder="e.g. Robert Smith" required>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="memberPhone" class="form-label fw-bold">Contact Phone</label>
-                                        <input type="tel" class="form-control form-control-lg border-light bg-light" id="memberPhone" placeholder="e.g. 555-0199" required>
+                                        <input type="tel" class="form-control form-control-lg border-light bg-light" id="memberPhone" name="memberPhone" placeholder="e.g. 555-0199" required>
                                     </div>
                                     <div class="col-12">
                                         <label for="memberAddress" class="form-label fw-bold">Home Delivery Address</label>
-                                        <input type="text" class="form-control form-control-lg border-light bg-light" id="memberAddress" placeholder="e.g. 120 Elm St, Central Hub" required>
+                                        <input type="text" class="form-control form-control-lg border-light bg-light" id="memberAddress" name="memberAddress" placeholder="e.g. 120 Elm St, Central Hub" required>
                                     </div>
                                     <div class="col-12">
                                         <label for="memberAllergies" class="form-label fw-bold">Allergies & Food Exclusions (Comma Separated)</label>
-                                        <textarea class="form-control border-light bg-light" id="memberAllergies" rows="3" placeholder="e.g. Peanuts, Gluten, Dairy, low sodium prescription"></textarea>
+                                        <textarea class="form-control border-light bg-light" id="memberAllergies" name="memberAllergies" rows="3" placeholder="e.g. Peanuts, Gluten, Dairy, low sodium prescription"></textarea>
                                     </div>
                                     <div class="col-12">
                                         <button type="submit" class="btn btn-premium w-100 py-3 fs-5" id="btn-submit-member">Submit Meal Assistance Request</button>
@@ -71,18 +73,20 @@
 
                         <!-- 2. Caregiver Onboarding Form -->
                         <div class="tab-pane fade {% if active_role == 'caregiver' %}show active{% endif %}" id="panel-caregiver" role="tabpanel" aria-labelledby="tab-caregiver">
-                            <form method="POST" action="{% url 'register' %}" onsubmit="event.preventDefault(); alert('Caregiver Registered Successfully!');">
+                            <form id="form-caregiver" method="POST" action="{% url 'register' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="role" value="caregiver">
                                 <h3 class="fw-bold fs-4 mb-3 text-primary"><i class="bi bi-people-fill me-2"></i>Caregiver Portal Access</h3>
                                 <p class="text-muted small mb-4">Register as a caregiver to manage schedules, track deliveries, and oversee profiles for dependent family members.</p>
                                 
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label for="caregiverName" class="form-label fw-bold">Caregiver Name</label>
-                                        <input type="text" class="form-control form-control-lg border-light bg-light" id="caregiverName" required>
+                                        <input type="text" class="form-control form-control-lg border-light bg-light" id="caregiverName" name="caregiverName" required>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="caregiverRelation" class="form-label fw-bold">Relationship to Member</label>
-                                        <select class="form-select form-select-lg border-light bg-light" id="caregiverRelation" required>
+                                        <select class="form-select form-select-lg border-light bg-light" id="caregiverRelation" name="caregiverRelation" required>
                                             <option value="spouse">Spouse</option>
                                             <option value="child" selected>Child</option>
                                             <option value="professional">Professional Caregiver</option>
@@ -91,7 +95,7 @@
                                     </div>
                                     <div class="col-12">
                                         <label for="associatedMember" class="form-label fw-bold">Linked Senior Member Name / ID</label>
-                                        <input type="text" class="form-control form-control-lg border-light bg-light" id="associatedMember" placeholder="Search by name or input Member ID" required>
+                                        <input type="text" class="form-control form-control-lg border-light bg-light" id="associatedMember" name="associatedMember" placeholder="Search by name or input Member ID" required>
                                     </div>
                                     <div class="col-12">
                                         <button type="submit" class="btn btn-premium w-100 py-3 fs-5" id="btn-submit-caregiver">Register and Link Profiles</button>
@@ -102,18 +106,20 @@
 
                         <!-- 3. Volunteer Onboarding Form -->
                         <div class="tab-pane fade {% if active_role == 'volunteer' %}show active{% endif %}" id="panel-volunteer" role="tabpanel" aria-labelledby="tab-volunteer">
-                            <form method="POST" action="{% url 'register' %}" onsubmit="event.preventDefault(); alert('Rider Volunteer Profile Saved Successfully!');">
+                            <form id="form-volunteer" method="POST" action="{% url 'register' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="role" value="volunteer">
                                 <h3 class="fw-bold fs-4 mb-3 text-primary"><i class="bi bi-bicycle me-2"></i>Volunteer Rider Application</h3>
                                 <p class="text-muted small mb-4">Join our delivery force. Indicate your vehicle profile and active transport perimeter.</p>
                                 
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label for="riderName" class="form-label fw-bold">Driver Name</label>
-                                        <input type="text" class="form-control form-control-lg border-light bg-light" id="riderName" required>
+                                        <input type="text" class="form-control form-control-lg border-light bg-light" id="riderName" name="riderName" required>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="vehicleType" class="form-label fw-bold">Vehicle Profile</label>
-                                        <select class="form-select form-select-lg border-light bg-light" id="vehicleType" required>
+                                        <select class="form-select form-select-lg border-light bg-light" id="vehicleType" name="vehicleType" required>
                                             <option value="car" selected>Car (Thermal Compartment)</option>
                                             <option value="motorcycle">Motorcycle / E-Bike</option>
                                             <option value="bicycle">Bicycle</option>
@@ -122,7 +128,7 @@
                                     <div class="col-12">
                                         <label for="operatingRadius" class="form-label fw-bold">Preferred Dispatch Radius (km)</label>
                                         <div class="d-flex align-items-center gap-3">
-                                            <input type="range" class="form-range" id="operatingRadius" min="1" max="25" value="10" oninput="document.getElementById('radiusVal').innerText = this.value">
+                                            <input type="range" class="form-range" id="operatingRadius" name="operatingRadius" min="1" max="25" value="10" oninput="document.getElementById('radiusVal').innerText = this.value">
                                             <span class="badge bg-primary fs-6"><span id="radiusVal">10</span> km</span>
                                         </div>
                                     </div>
@@ -135,22 +141,24 @@
 
                         <!-- 4. Partner Kitchen Onboarding Form -->
                         <div class="tab-pane fade {% if active_role == 'partner' %}show active{% endif %}" id="panel-partner" role="tabpanel" aria-labelledby="tab-partner">
-                            <form method="POST" action="{% url 'register' %}" onsubmit="event.preventDefault(); alert('Kitchen Partner Registered Successfully!');">
+                            <form id="form-partner" method="POST" action="{% url 'register' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="role" value="partner">
                                 <h3 class="fw-bold fs-4 mb-3 text-primary"><i class="bi bi-house-door-fill me-2"></i>Partner Culinary Kitchen Enrollment</h3>
                                 <p class="text-muted small mb-4">Enroll your commercial kitchen to receive daily ingredient and portion allocation routes.</p>
                                 
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label for="kitchenName" class="form-label fw-bold">Culinary Facility Name</label>
-                                        <input type="text" class="form-control form-control-lg border-light bg-light" id="kitchenName" required>
+                                        <input type="text" class="form-control form-control-lg border-light bg-light" id="kitchenName" name="kitchenName" required>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="kitchenCapacity" class="form-label fw-bold">Max Daily Portions Capacity</label>
-                                        <input type="number" class="form-control form-control-lg border-light bg-light" id="kitchenCapacity" min="1" value="250" required>
+                                        <input type="number" class="form-control form-control-lg border-light bg-light" id="kitchenCapacity" name="kitchenCapacity" min="1" value="250" required>
                                     </div>
                                     <div class="col-12">
                                         <label for="kitchenLicense" class="form-label fw-bold">Food Handler Safety License / Certification Code</label>
-                                        <input type="text" class="form-control form-control-lg border-light bg-light" id="kitchenLicense" placeholder="e.g. FOOD-CERT-90210" required>
+                                        <input type="text" class="form-control form-control-lg border-light bg-light" id="kitchenLicense" name="kitchenLicense" placeholder="e.g. FOOD-CERT-90210" required>
                                     </div>
                                     <div class="col-12">
                                         <button type="submit" class="btn btn-premium w-100 py-3 fs-5" id="btn-submit-kitchen">Enroll Kitchen Facility</button>
@@ -160,9 +168,89 @@
                         </div>
 
                     </div>
+                    
+                    <!-- Premium Visual Onboarding Feedback -->
+                    <div id="alert-container" class="mt-4 d-none"></div>
                 </div>
             </div>
         </div>
     </div>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const forms = ['form-member', 'form-caregiver', 'form-volunteer', 'form-partner'];
+    const alertContainer = document.getElementById('alert-container');
+
+    forms.forEach(formId => {
+        const form = document.getElementById(formId);
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(form);
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const originalBtnText = submitBtn.innerHTML;
+                
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Registering in MySQL...';
+                
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        alertContainer.className = "mt-4 alert alert-success rounded-4 border-success border-opacity-25 shadow-sm p-4 d-block";
+                        alertContainer.innerHTML = `
+                            <div class="d-flex align-items-center gap-3">
+                                <i class="bi bi-check-circle-fill text-success fs-3"></i>
+                                <div>
+                                    <h5 class="fw-bold mb-1 text-success">Registration Complete!</h5>
+                                    <p class="mb-0 text-muted small">${data.message}</p>
+                                </div>
+                            </div>
+                        `;
+                        form.reset();
+                        const radiusVal = document.getElementById('radiusVal');
+                        if (radiusVal) radiusVal.innerText = '10';
+                    } else {
+                        alertContainer.className = "mt-4 alert alert-danger rounded-4 border-danger border-opacity-25 shadow-sm p-4 d-block";
+                        alertContainer.innerHTML = `
+                            <div class="d-flex align-items-center gap-3">
+                                <i class="bi bi-exclamation-triangle-fill text-danger fs-3"></i>
+                                <div>
+                                    <h5 class="fw-bold mb-1 text-danger">Registration Failed</h5>
+                                    <p class="mb-0 text-muted small">${data.message || 'An error occurred during submission.'}</p>
+                                </div>
+                            </div>
+                        `;
+                    }
+                } catch (error) {
+                    console.error("Error during registration:", error);
+                    alertContainer.className = "mt-4 alert alert-danger rounded-4 border-danger border-opacity-25 shadow-sm p-4 d-block";
+                    alertContainer.innerHTML = `
+                        <div class="d-flex align-items-center gap-3">
+                            <i class="bi bi-exclamation-triangle-fill text-danger fs-3"></i>
+                            <div>
+                                <h5 class="fw-bold mb-1 text-danger">Connection Error</h5>
+                                <p class="mb-0 text-muted small">Could not connect to the MySQL database backend server.</p>
+                            </div>
+                        </div>
+                    `;
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
+                    alertContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            });
+        }
+    });
+});
+</script>
 {% endblock %}

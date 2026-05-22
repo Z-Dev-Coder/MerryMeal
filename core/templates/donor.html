@@ -34,24 +34,26 @@
                         <button type="button" class="btn btn-outline-premium flex-grow-1 py-3" onclick="setPresetAmount(250)">$250</button>
                     </div>
 
-                    <form id="donationForm" onsubmit="event.preventDefault(); processDonation();">
+                    <form id="donationForm" method="POST" action="{% url 'donor_portal' %}" onsubmit="event.preventDefault(); processDonation();">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="donation">
                         <div class="row g-3">
                             <div class="col-12">
                                 <label for="donorName" class="form-label fw-bold">Billing Full Name</label>
-                                <input type="text" class="form-control bg-light border-0" id="donorName" placeholder="e.g. Alice Smith" required>
+                                <input type="text" class="form-control bg-light border-0" id="donorName" name="name" placeholder="e.g. Alice Smith" required>
                             </div>
                             <div class="col-md-8">
                                 <label for="donationAmount" class="form-label fw-bold">Donation Amount ($)</label>
                                 <div class="input-group">
                                     <span class="input-group-text">$</span>
-                                    <input type="number" class="form-control bg-light border-0" id="donationAmount" value="100.00" step="0.01" min="1" required>
+                                    <input type="number" class="form-control bg-light border-0" id="donationAmount" name="amount" value="100.00" step="0.01" min="1" required>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <label for="donorEmail" class="form-label fw-bold">Receipt Email</label>
-                                <input type="email" class="form-control bg-light border-0" id="donorEmail" placeholder="e.g. alice@example.com" required>
+                                <input type="email" class="form-control bg-light border-0" id="donorEmail" name="email" placeholder="e.g. alice@example.com" required>
                             </div>
-
+ 
                             <!-- Card Credentials Grid -->
                             <div class="col-12 border-top my-4 pt-3">
                                 <label for="cardNum" class="form-label fw-bold">Credit Card Details</label>
@@ -68,43 +70,45 @@
                                     </div>
                                 </div>
                             </div>
-
+ 
                             <div class="col-12">
                                 <button type="submit" class="btn btn-premium w-100 py-3 fs-5" id="btn-donate">Process Secure Contribution</button>
                             </div>
                         </div>
                     </form>
-
+ 
                     <!-- Receipt Result Panel -->
                     <div id="receiptPanel" class="d-none mt-4 p-4 bg-success bg-opacity-10 border border-success border-opacity-25 rounded-4">
                         <!-- Filled dynamically by JS -->
                     </div>
                 </div>
             </div>
-
+ 
             <!-- Right Column: Resource Pledge Ledger (40%) -->
             <div class="col-lg-5 fade-in-slide" style="animation-delay: 0.2s;">
                 <div class="p-4 bg-white rounded-5 shadow-sm border border-light">
                     <h3 class="fw-bold fs-4 mb-3 text-primary"><i class="bi bi-box-fill me-2 text-accent"></i>Pledge Logistical Resources</h3>
                     <p class="text-muted small mb-4">Don't have capital? You can pledge cooking ingredients, vehicles, thermal delivery backpacks, or e-bikes directly to our distribution grid.</p>
                     
-                    <form onsubmit="event.preventDefault(); appendResourcePledge();">
+                    <form id="pledgeForm" method="POST" action="{% url 'donor_portal' %}" onsubmit="event.preventDefault(); appendResourcePledge();">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="pledge">
                         <div class="mb-3">
                             <label for="resourceSelect" class="form-label fw-bold">Select Resource Class</label>
-                            <select class="form-select bg-light border-0" id="resourceSelect" required>
-                                <option value="ebike" selected>E-Bike / Logistics Scooter</option>
-                                <option value="thermal">Thermal Insulated Food Backpacks</option>
-                                <option value="ingredients">Dry Food Ingredients Bundle (Grains/Rice)</option>
-                                <option value="space">Commercial Kitchen Cold Storage Rent Waiver</option>
+                            <select class="form-select bg-light border-0" id="resourceSelect" name="asset_class" required>
+                                <option value="E-Bike / Logistics Scooter" selected>E-Bike / Logistics Scooter</option>
+                                <option value="Thermal Insulated Food Backpacks">Thermal Insulated Food Backpacks</option>
+                                <option value="Dry Food Ingredients Bundle (Grains/Rice)">Dry Food Ingredients Bundle (Grains/Rice)</option>
+                                <option value="Commercial Kitchen Cold Storage Rent Waiver">Commercial Kitchen Cold Storage Rent Waiver</option>
                             </select>
                         </div>
                         <div class="mb-3">
                             <label for="resourceDesc" class="form-label fw-bold">Resource Description & Portions Details</label>
-                            <textarea class="form-control bg-light border-0" id="resourceDesc" rows="3" placeholder="e.g. 5 units of high-grade insulated thermal bags, brand new." required></textarea>
+                            <textarea class="form-control bg-light border-0" id="resourceDesc" name="desc" rows="3" placeholder="e.g. 5 units of high-grade insulated thermal bags, brand new." required></textarea>
                         </div>
                         <button type="submit" class="btn btn-outline-premium w-100 py-3">Submit Resource Pledge Entry</button>
                     </form>
-
+ 
                     <!-- Active Resource Ledger -->
                     <div class="mt-4 border-top pt-4">
                         <h4 class="fw-bold fs-5 mb-3 text-primary">Active Pledges Ledger</h4>
@@ -117,14 +121,16 @@
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    {% for pledge in pledges %}
                                     <tr>
-                                        <td><strong>2x Insulated Thermal Coup Bags</strong><br><span class="text-muted small">Pledged by Mark K.</span></td>
+                                        <td><strong>{{ pledge.pledged_resources }}</strong></td>
                                         <td><span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-35">Staged</span></td>
                                     </tr>
-                                    <tr>
-                                        <td><strong>50kg Organic Jasmine Rice</strong><br><span class="text-muted small">Pledged by WholeFoods local</span></td>
-                                        <td><span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-35">Staged</span></td>
+                                    {% empty %}
+                                    <tr id="empty-pledge-row">
+                                        <td colspan="2" class="text-center text-muted py-3">No active resource pledges in ledger.</td>
                                     </tr>
+                                    {% endfor %}
                                 </tbody>
                             </table>
                         </div>
@@ -136,53 +142,103 @@
     </div>
 </section>
 
-<!-- Transaction Processing & Receipt Generation Simulation -->
+<!-- Transaction Processing & Receipt Generation JS with MySQL Integration -->
 <script>
 function setPresetAmount(amount) {
     document.getElementById('donationAmount').value = amount.toFixed(2);
 }
 
-function processDonation() {
+async function processDonation() {
+    const form = document.getElementById('donationForm');
     const name = document.getElementById('donorName').value;
     const amount = document.getElementById('donationAmount').value;
     const card = document.getElementById('cardNum').value.trim();
     const receiptDiv = document.getElementById('receiptPanel');
+    const submitBtn = document.getElementById('btn-donate');
     
     if (card.length !== 16) {
         alert('Invalid Card Number length. Must be exactly 16 digits.');
         return;
     }
     
-    receiptDiv.classList.remove('d-none');
-    receiptDiv.innerHTML = `
-        <h5 class="fw-bold text-success mb-2"><i class="bi bi-patch-check-fill me-2"></i>Mock Authorization Successful!</h5>
-        <p class="mb-2 text-muted small">Bank receipts registered. Thanks for your contribution!</p>
-        <div class="bg-white p-3 rounded-3 border small">
-            <span class="d-block"><strong>Receipt ID:</strong> MM-TXN-REC-77821</span>
-            <span class="d-block"><strong>Donor Name:</strong> ${name}</span>
-            <span class="d-block"><strong>Amount Paid:</strong> $${amount} USD</span>
-            <span class="d-block"><strong>Stripe Mock Signature:</strong> tx_9a8df7ad6ef22e1</span>
-        </div>
-    `;
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing Transaction...';
     
-    document.getElementById('donationForm').reset();
-    alert('Secure Transaction complete! Receipt issued below.');
+    try {
+        const formData = new FormData(form);
+        const response = await fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            receiptDiv.classList.remove('d-none');
+            receiptDiv.innerHTML = `
+                <h5 class="fw-bold text-success mb-2"><i class="bi bi-patch-check-fill me-2"></i>Mock Authorization Successful!</h5>
+                <p class="mb-2 text-muted small">Bank receipt registered in MySQL database. Thanks for your contribution!</p>
+                <div class="bg-white p-3 rounded-3 border small">
+                    <span class="d-block"><strong>Receipt ID:</strong> ${data.receipt_id}</span>
+                    <span class="d-block"><strong>Donor Name:</strong> ${data.donor_name}</span>
+                    <span class="d-block"><strong>Amount Paid:</strong> $${parseFloat(data.amount).toFixed(2)} USD</span>
+                    <span class="d-block"><strong>Stripe Mock Signature:</strong> tx_mysql_authed_${data.receipt_id.toLowerCase()}</span>
+                </div>
+            `;
+            form.reset();
+            alert('Secure Transaction complete! Receipt issued below.');
+        } else {
+            alert('Failed to process donation: ' + data.message);
+        }
+    } catch (e) {
+        console.error("Error processing donation:", e);
+        alert('Connection error: could not submit donation to MySQL.');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    }
 }
 
-function appendResourcePledge() {
+async function appendResourcePledge() {
+    const form = document.getElementById('pledgeForm');
     const select = document.getElementById('resourceSelect');
     const assetName = select.options[select.selectedIndex].text;
     const desc = document.getElementById('resourceDesc').value;
     const ledger = document.getElementById('pledgeLedger').getElementsByTagName('tbody')[0];
     
-    const newRow = ledger.insertRow(0);
-    newRow.innerHTML = `
-        <td><strong>${assetName}</strong><br><span class="text-muted small">${desc}</span></td>
-        <td><span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-35">Staged</span></td>
-    `;
-    
-    document.getElementById('resourceDesc').value = '';
-    alert('Logistical Resource Staged successfully! Delivery dispatch scheduled.');
+    try {
+        const formData = new FormData(form);
+        const response = await fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            const emptyRow = document.getElementById('empty-pledge-row');
+            if (emptyRow) emptyRow.remove();
+
+            const newRow = ledger.insertRow(0);
+            newRow.innerHTML = `
+                <td><strong>${data.asset_name}: ${data.desc}</strong></td>
+                <td><span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-35">Staged</span></td>
+            `;
+            
+            document.getElementById('resourceDesc').value = '';
+            alert('Logistical Resource Staged successfully and saved in MySQL! Delivery dispatch scheduled.');
+        } else {
+            alert('Failed to save resource pledge: ' + data.message);
+        }
+    } catch (e) {
+        console.error("Error saving resource pledge:", e);
+        alert('Connection error: could not save resource pledge to MySQL.');
+    }
 }
 </script>
 {% endblock %}

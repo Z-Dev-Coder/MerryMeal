@@ -101,19 +101,20 @@
                     <h3 class="fw-bold fs-4 mb-3 text-primary"><i class="bi bi-thermometer-high me-2 text-accent"></i>Digital HACCP Temperature Logger</h3>
                     <p class="text-muted small mb-4">Input safety signatures. Logs will dynamically lock corresponding delivery dispatch routes when hold temperatures exceed 140°F.</p>
                     
-                    <form onsubmit="event.preventDefault(); appendSafetyLog();">
+                    <form id="safetyLogForm" onsubmit="event.preventDefault(); appendSafetyLog();">
+                        {% csrf_token %}
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label for="dishName" class="form-label fw-bold">Dish Selection</label>
-                                <input type="text" class="form-control bg-light border-0" id="dishName" value="Herb Roasted Chicken Quinoa" required>
+                                <input type="text" class="form-control bg-light border-0" id="dishName" name="dish" value="Herb Roasted Chicken Quinoa" required>
                             </div>
                             <div class="col-md-3">
                                 <label for="cookTemp" class="form-label fw-bold">Cooking Temp (°F)</label>
-                                <input type="number" class="form-control bg-light border-0" id="cookTemp" value="168" min="165" required>
+                                <input type="number" class="form-control bg-light border-0" id="cookTemp" name="cook_temp" value="168" min="165" required>
                             </div>
                             <div class="col-md-3">
                                 <label for="holdTemp" class="form-label fw-bold">Holding Temp (°F)</label>
-                                <input type="number" class="form-control bg-light border-0" id="holdTemp" value="145" min="140" required>
+                                <input type="number" class="form-control bg-light border-0" id="holdTemp" name="hold_temp" value="145" min="140" required>
                             </div>
                             <div class="col-12">
                                 <button type="submit" class="btn btn-premium w-100 py-3">Record HACCP Safety Sign-Off</button>
@@ -135,7 +136,7 @@
                 <!-- HACCP Log Table -->
                 <div class="p-4 bg-white rounded-5 shadow-sm border border-light">
                     <h4 class="fw-bold fs-4 mb-3 text-primary"><i class="bi bi-journal-text me-2 text-accent"></i>Recent Temp Audits</h4>
-                    <div class="table-responsive">
+                    <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
                         <table class="table table-hover align-middle small mb-0" id="tempLogTable">
                             <thead>
                                 <tr class="text-muted">
@@ -145,16 +146,17 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                {% for log in safety_logs %}
                                 <tr>
-                                    <td><strong>Herb Roasted Chicken</strong></td>
-                                    <td><span class="fw-bold text-success">145°F</span></td>
+                                    <td><strong>{{ log.dish_name }}</strong></td>
+                                    <td><span class="fw-bold text-success">{{ log.holding_temp_f }}°F</span></td>
                                     <td><span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-30">Passed</span></td>
                                 </tr>
-                                <tr>
-                                    <td><strong>Stewed Carrots</strong></td>
-                                    <td><span class="fw-bold text-success">142°F</span></td>
-                                    <td><span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-30">Passed</span></td>
+                                {% empty %}
+                                <tr id="empty-log-row">
+                                    <td colspan="3" class="text-center text-muted py-3">No audits registered in MySQL.</td>
                                 </tr>
+                                {% endfor %}
                             </tbody>
                         </table>
                     </div>
@@ -174,18 +176,40 @@ function scaleRecipes(portions) {
     document.getElementById('ing-greens').innerText = (p * 0.1).toFixed(1) + ' kg';
 }
 
-function appendSafetyLog() {
-    const dish = document.getElementById('dishName').value;
-    const hold = document.getElementById('holdTemp').value;
-    const table = document.getElementById('tempLogTable').getElementsByTagName('tbody')[0];
+async function appendSafetyLog() {
+    const form = document.getElementById('safetyLogForm');
+    const formData = new FormData(form);
     
-    const newRow = table.insertRow(0);
-    newRow.innerHTML = `
-        <td><strong>${dish}</strong></td>
-        <td><span class="fw-bold text-success">${hold}°F</span></td>
-        <td><span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-30">Passed</span></td>
-    `;
-    alert('HACCP Temperature Log Appended and Sign-Off Locked!');
+    try {
+        const response = await fetch('{% url "safety_log_post" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            const table = document.getElementById('tempLogTable').getElementsByTagName('tbody')[0];
+            const emptyRow = document.getElementById('empty-log-row');
+            if (emptyRow) emptyRow.remove();
+
+            const newRow = table.insertRow(0);
+            newRow.innerHTML = `
+                <td><strong>${data.dish_name}</strong></td>
+                <td><span class="fw-bold text-success">${parseFloat(data.holding_temp_f).toFixed(0)}°F</span></td>
+                <td><span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-30">Passed</span></td>
+            `;
+            alert(`HACCP Temperature Log for "${data.dish_name}" Saved in MySQL Successfully!`);
+            form.reset();
+        } else {
+            alert('Failed to save safety log: ' + data.message);
+        }
+    } catch (e) {
+        console.error("Error saving log to database:", e);
+        alert('Connection error: could not save HACCP log in MySQL.');
+    }
 }
 </script>
 {% endblock %}

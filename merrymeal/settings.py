@@ -69,6 +69,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'merrymeal.wsgi.application'
 
+# Custom User Model
+AUTH_USER_MODEL = 'core.User'
+
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
