@@ -349,6 +349,27 @@ body.high-contrast-mode .card-icon-wrapper {
     }
 }
 
+@keyframes floatElement {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+.floating-card-1 {
+    animation: floatElement 5s ease-in-out infinite;
+}
+
+.floating-card-2 {
+    animation: floatElement 6s ease-in-out infinite 1s;
+}
+
+.floating-card-3 {
+    animation: floatElement 7s ease-in-out infinite 0.5s;
+}
+
 /* --- 10. Footer Premium Stylings --- */
 .footer-glass {
     background: #0f172a; /* Slate 900 - Professional Dark Theme contrast */

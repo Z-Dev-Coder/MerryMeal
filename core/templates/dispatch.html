@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block title %}GIS Dispatch & Courier Logistics - MerryMeal{% endblock %}
+
+{% block content %}
+<section class="py-5" aria-labelledby="dispatch-title">
+    <div class="container py-3">
+        <!-- Page Header -->
+        <div class="row align-items-center mb-5 g-4 fade-in-slide">
+            <div class="col-md-8">
+                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-20 px-3 py-2 rounded-pill mb-2"><i class="bi bi-geo-alt-fill me-1"></i>Active GIS Route Mapping</span>
+                <h1 class="fw-extrabold fs-2 mb-2" id="dispatch-title">GIS Dispatch & Routing Logistics</h1>
+                <p class="text-muted mb-0">Compute delivery distances using spherical Haversine coordinates. Automatically route hot meals within our active 10km perimeter, and assign frozen bundles to distant regions.</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <button onclick="autoSequenceRoutes()" class="btn btn-premium px-4 py-3" id="btn-allocate-all">
+                    <i class="bi bi-shuffle me-2"></i>Auto-Sequence Deliveries
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            
+            <!-- Left Column: Pending Queues and Driver Allocation (60%) -->
+            <div class="col-lg-7 fade-in-slide" style="animation-delay: 0.1s;">
+                <div class="p-4 bg-white rounded-5 shadow-sm border border-light mb-4">
+                    <h3 class="fw-bold fs-4 mb-3 text-primary"><i class="bi bi-hourglass-split me-2 text-accent"></i>Unallocated Delivery Queue</h3>
+                    <p class="text-muted small mb-4">Real-time coordinates mapped via Haversine geometry formulas. Click assign or allocate automatically.</p>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle small mb-0" id="deliveryQueue">
+                            <thead>
+                                <tr class="text-muted">
+                                    <th>Member ID</th>
+                                    <th>Location</th>
+                                    <th>Hub Dist</th>
+                                    <th>Meal Type</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr id="row-1">
+                                    <td><strong>#MEM-890</strong></td>
+                                    <td>120 Elm St</td>
+                                    <td><span class="fw-bold text-success">3.4 km</span></td>
+                                    <td><span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">Hot Plate</span></td>
+                                    <td><button onclick="allocateSingle('row-1')" class="btn btn-outline-premium btn-sm py-1 px-3">Assign Courier</button></td>
+                                </tr>
+                                <tr id="row-2">
+                                    <td><strong>#MEM-412</strong></td>
+                                    <td>45 Forest Rd</td>
+                                    <td><span class="fw-bold text-danger">12.1 km</span></td>
+                                    <td><span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1">Frozen Bundle</span></td>
+                                    <td><button onclick="allocateSingle('row-2')" class="btn btn-outline-premium btn-sm py-1 px-3">Assign Courier</button></td>
+                                </tr>
+                                <tr id="row-3">
+                                    <td><strong>#MEM-551</strong></td>
+                                    <td>88 Oak Blvd</td>
+                                    <td><span class="fw-bold text-success">8.7 km</span></td>
+                                    <td><span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">Hot Plate</span></td>
+                                    <td><button onclick="allocateSingle('row-3')" class="btn btn-outline-premium btn-sm py-1 px-3">Assign Courier</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Active Driver Roster Status -->
+                <div class="p-4 bg-white rounded-5 shadow-sm border border-light">
+                    <h3 class="fw-bold fs-4 mb-3 text-primary"><i class="bi bi-bicycle me-2 text-accent"></i>Active Couriers On-Duty</h3>
+                    <p class="text-muted small mb-4">On-duty volunteer riders, carrying active capacity thresholds.</p>
+                    
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <div class="p-3 bg-light rounded-4 border d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong class="d-block">Courier: David L.</strong>
+                                    <span class="text-muted small">Vehicle: E-Bike (Max 15km)</span>
+                                </div>
+                                <span class="badge bg-success">On-Duty</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-3 bg-light rounded-4 border d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong class="d-block">Courier: Jessica R.</strong>
+                                    <span class="text-muted small">Vehicle: Car (Thermal Hold)</span>
+                                </div>
+                                <span class="badge bg-success">On-Duty</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Styled SVG Map Geofence (40%) -->
+            <div class="col-lg-5 fade-in-slide" style="animation-delay: 0.2s;">
+                <div class="p-4 bg-white rounded-5 shadow-sm border border-light">
+                    <h3 class="fw-bold fs-4 mb-3 text-primary"><i class="bi bi-map-fill me-2 text-accent"></i>Interactive Geofence Circle</h3>
+                    <p class="text-muted small mb-3">Live map visualizing our active central hub and 10km Haversine boundary limit.</p>
+                    
+                    <!-- Beautiful Custom SVG Map -->
+                    <div class="bg-light p-2 rounded-4 border border-light text-center mb-3">
+                        <svg viewBox="0 0 300 300" style="background-color: #f8fafc; border-radius: 12px; width: 100%; max-height: 350px;">
+                            <!-- Central Hub -->
+                            <circle cx="150" cy="150" r="10" fill="#4f46e5" opacity="0.8"/>
+                            <text x="155" y="140" font-size="10" font-family="'Outfit'" font-weight="bold" fill="#4f46e5">CENTRAL HUB</text>
+                            
+                            <!-- 10km Radius Boundary -->
+                            <circle cx="150" cy="150" r="90" fill="none" stroke="#10b981" stroke-width="2" stroke-dasharray="4"/>
+                            <text x="155" y="235" font-size="9" font-family="'Outfit'" fill="#10b981" font-weight="bold">10KM ACTIVE GEOFENCE</text>
+                            
+                            <!-- Delivery Points -->
+                            <!-- Point 1 (Inside 10km) -->
+                            <circle cx="120" cy="180" r="6" fill="#10b981" id="svg-point-1"/>
+                            <text x="110" y="170" font-size="8" font-family="'Outfit'" fill="#1e293b">MEM-890 (3.4km)</text>
+                            
+                            <!-- Point 2 (Outside 10km) -->
+                            <circle cx="260" cy="80" r="6" fill="#f59e0b" id="svg-point-2"/>
+                            <text x="180" y="75" font-size="8" font-family="'Outfit'" fill="#1e293b">MEM-412 (12.1km)</text>
+
+                            <!-- Point 3 (Inside 10km) -->
+                            <circle cx="190" cy="210" r="6" fill="#10b981" id="svg-point-3"/>
+                            <text x="180" y="225" font-size="8" font-family="'Outfit'" fill="#1e293b">MEM-551 (8.7km)</text>
+                        </svg>
+                    </div>
+
+                    <div class="d-flex justify-content-between text-center small">
+                        <div class="p-2 border rounded bg-light flex-grow-1 mx-1">
+                            <strong class="d-block text-success">Within 10km</strong>
+                            <span class="text-muted small">Daily Hot Plates</span>
+                        </div>
+                        <div class="p-2 border rounded bg-light flex-grow-1 mx-1">
+                            <strong class="d-block text-warning">Outside 10km</strong>
+                            <span class="text-muted small">Frozen Packs</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- Auto Sequence & Allocations Simulated JS -->
+<script>
+function allocateSingle(rowId) {
+    const row = document.getElementById(rowId);
+    row.style.transition = "opacity 0.5s ease";
+    row.style.opacity = "0.3";
+    setTimeout(() => {
+        row.remove();
+        alert('Route Allocated Successfully to On-Duty Courier!');
+        checkQueueEmpty();
+    }, 500);
+}
+
+function autoSequenceRoutes() {
+    const queue = document.getElementById('deliveryQueue').getElementsByTagName('tbody')[0];
+    queue.style.transition = "opacity 0.8s ease";
+    queue.style.opacity = "0.2";
+    setTimeout(() => {
+        queue.innerHTML = `<tr><td colspan="5" class="text-center text-muted p-4"><i class="bi bi-check-circle-fill text-success fs-3 d-block mb-2"></i>All routes successfully sequenced and dispatched!</td></tr>`;
+        queue.style.opacity = "1";
+        alert('Auto-Haversine GIS allocation complete! All dispatch queues empty.');
+    }, 1000);
+}
+
+function checkQueueEmpty() {
+    const queue = document.getElementById('deliveryQueue').getElementsByTagName('tbody')[0];
+    if (queue.rows.length === 0) {
+        queue.innerHTML = `<tr><td colspan="5" class="text-center text-muted p-4"><i class="bi bi-check-circle-fill text-success fs-3 d-block mb-2"></i>All routes successfully sequenced and dispatched!</td></tr>`;
+    }
+}
+</script>
+{% endblock %}

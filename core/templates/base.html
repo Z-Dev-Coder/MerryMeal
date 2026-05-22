@@ -44,6 +44,19 @@
                         <a class="nav-link" href="#how-it-works">How It Works</a>
                     </li>
                     
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle fw-bold text-primary" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-rocket-takeoff-fill me-1 text-accent"></i>Portals Preview
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-4 p-2 mt-2" aria-labelledby="navbarDropdown" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); z-index: 1050;">
+                            <li><a class="dropdown-item rounded-3 py-2" href="{% url 'register' %}"><i class="bi bi-person-plus-fill me-2 text-primary"></i>Onboarding Intake</a></li>
+                            <li><a class="dropdown-item rounded-3 py-2" href="{% url 'kitchen_dashboard' %}"><i class="bi bi-house-door-fill me-2 text-success"></i>Kitchen Operations</a></li>
+                            <li><a class="dropdown-item rounded-3 py-2" href="{% url 'dispatch_queue' %}"><i class="bi bi-geo-alt-fill me-2 text-info"></i>GIS Dispatch Queue</a></li>
+                            <li><a class="dropdown-item rounded-3 py-2" href="{% url 'donor_portal' %}"><i class="bi bi-heart-fill me-2 text-danger"></i>Donor & Pledge Hub</a></li>
+                            <li><a class="dropdown-item rounded-3 py-2" href="{% url 'mis_dashboard' %}"><i class="bi bi-grid-fill me-2 text-warning"></i>MIS Dashboard</a></li>
+                        </ul>
+                    </li>
+                    
                     <!-- Accessibility (A11y) Panel Controls -->
                     <li class="nav-item ms-lg-3 d-flex align-items-center gap-2 a11y-controls-group">
                         <!-- Text Scaler Widget -->

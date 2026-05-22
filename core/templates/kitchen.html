@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+
+{% block title %}Culinary Kitchen Operations - MerryMeal{% endblock %}
+
+{% block content %}
+<section class="py-5" aria-labelledby="kitchen-title">
+    <div class="container py-3">
+        <!-- Dashboard Header -->
+        <div class="row align-items-center mb-5 g-4 fade-in-slide">
+            <div class="col-md-7">
+                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-3 py-2 rounded-pill mb-2"><i class="bi bi-patch-check-fill me-1"></i>HACCP Food Safety Certified</span>
+                <h1 class="fw-extrabold fs-2 mb-2" id="kitchen-title">Culinary Partner Operations Hub</h1>
+                <p class="text-muted mb-0">Prepare daily scheduled menu options, scale portion quantities, and audit holding temperatures before courier routing dispatches.</p>
+            </div>
+            <div class="col-md-5 text-md-end">
+                <span class="text-muted d-block small"><i class="bi bi-clock-fill me-1"></i>Active Lunch Service Prep</span>
+                <span class="fs-4 fw-bold text-primary">Prepping: 124 Portions</span>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            
+            <!-- Left Column: Operations and Safety Logging (60%) -->
+            <div class="col-lg-7 fade-in-slide" style="animation-delay: 0.1s;">
+                <!-- Section 1: Dynamic Portion Scaling -->
+                <div class="p-4 bg-white rounded-5 shadow-sm border border-light mb-4">
+                    <h3 class="fw-bold fs-4 mb-3 text-primary"><i class="bi bi-box-seam me-2 text-accent"></i>Ingredient Portion Auto-Scaler</h3>
+                    <p class="text-muted small mb-4">Portion scaling calculations are calculated dynamically based on scheduled member allergen flags.</p>
+                    
+                    <div class="row g-3 align-items-center mb-4">
+                        <div class="col-sm-6">
+                            <label for="portionMultiplier" class="form-label fw-bold">Set Target Portions</label>
+                            <input type="number" class="form-control form-control-lg bg-light border-0" id="portionMultiplier" value="124" min="1" oninput="scaleRecipes(this.value)">
+                        </div>
+                        <div class="col-sm-6 text-sm-start text-muted mt-sm-4 small">
+                            <i class="bi bi-info-circle me-1 text-primary"></i>Base recipe serves 1 portion.
+                        </div>
+                    </div>
+
+                    <!-- Scaling Ingredient Cards -->
+                    <div class="row g-2">
+                        <div class="col-6 col-sm-4">
+                            <div class="bg-light p-3 rounded-4 border text-center">
+                                <span class="d-block text-muted small">Organic Chicken</span>
+                                <strong class="fs-4 text-primary" id="ing-chicken">24.8 kg</strong>
+                            </div>
+                        </div>
+                        <div class="col-6 col-sm-4">
+                            <div class="bg-light p-3 rounded-4 border text-center">
+                                <span class="d-block text-muted small">Steamed Quinoa</span>
+                                <strong class="fs-4 text-primary" id="ing-quinoa">18.6 kg</strong>
+                            </div>
+                        </div>
+                        <div class="col-6 col-sm-4">
+                            <div class="bg-light p-3 rounded-4 border text-center">
+                                <span class="d-block text-muted small">Tuscan Greens</span>
+                                <strong class="fs-4 text-primary" id="ing-greens">12.4 kg</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Expiry & Inventory Stock Progress Bars -->
+                <div class="p-4 bg-white rounded-5 shadow-sm border border-light mb-4">
+                    <h3 class="fw-bold fs-4 mb-3 text-primary"><i class="bi bi-pie-chart-fill me-2 text-accent"></i>Raw Stock Inventory Levels</h3>
+                    <p class="text-muted small mb-3">Audited real-time raw stock reserves with early-warning expiration indicators.</p>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="fw-bold">Freezer Stock (Chicken & Meats)</span>
+                            <span class="text-success fw-bold">85% Reserved</span>
+                        </div>
+                        <div class="progress rounded-pill" style="height: 10px;">
+                            <div class="progress-bar bg-success rounded-pill" role="progressbar" style="width: 85%;" aria-valuenow="85" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="fw-bold">Grains & Pantry (Quinoa & Rices)</span>
+                            <span class="text-primary fw-bold">62% Reserved</span>
+                        </div>
+                        <div class="progress rounded-pill" style="height: 10px;">
+                            <div class="progress-bar bg-primary rounded-pill" role="progressbar" style="width: 62%;" aria-valuenow="62" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="fw-bold">Produce & Greens (Expired in 2 Days!)</span>
+                            <span class="text-danger fw-bold">34% (Critical Restock)</span>
+                        </div>
+                        <div class="progress rounded-pill" style="height: 10px;">
+                            <div class="progress-bar bg-danger rounded-pill" role="progressbar" style="width: 34%;" aria-valuenow="34" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Safety Hold Temperature Form -->
+                <div class="p-4 bg-white rounded-5 shadow-sm border border-light">
+                    <h3 class="fw-bold fs-4 mb-3 text-primary"><i class="bi bi-thermometer-high me-2 text-accent"></i>Digital HACCP Temperature Logger</h3>
+                    <p class="text-muted small mb-4">Input safety signatures. Logs will dynamically lock corresponding delivery dispatch routes when hold temperatures exceed 140°F.</p>
+                    
+                    <form onsubmit="event.preventDefault(); appendSafetyLog();">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="dishName" class="form-label fw-bold">Dish Selection</label>
+                                <input type="text" class="form-control bg-light border-0" id="dishName" value="Herb Roasted Chicken Quinoa" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="cookTemp" class="form-label fw-bold">Cooking Temp (°F)</label>
+                                <input type="number" class="form-control bg-light border-0" id="cookTemp" value="168" min="165" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="holdTemp" class="form-label fw-bold">Holding Temp (°F)</label>
+                                <input type="number" class="form-control bg-light border-0" id="holdTemp" value="145" min="140" required>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-premium w-100 py-3">Record HACCP Safety Sign-Off</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right Column: Visual Art & Temperature Log Audits (40%) -->
+            <div class="col-lg-5 fade-in-slide" style="animation-delay: 0.2s;">
+                <!-- Main High-Fidelity Kitchen Image Asset -->
+                <div class="position-relative mb-4">
+                    {% load static %}
+                    <img src="{% static 'images/premium_kitchen_prep.png' %}" alt="Professional clean kitchen preparing healthy portion meals" class="img-fluid rounded-5 shadow-sm border border-light w-100">
+                    <span class="position-absolute bottom-0 start-0 m-3 badge bg-white bg-opacity-95 text-primary border shadow-sm p-3 rounded-4"><i class="bi bi-eye-fill me-1"></i>Active Sanitation Checked</span>
+                </div>
+
+                <!-- HACCP Log Table -->
+                <div class="p-4 bg-white rounded-5 shadow-sm border border-light">
+                    <h4 class="fw-bold fs-4 mb-3 text-primary"><i class="bi bi-journal-text me-2 text-accent"></i>Recent Temp Audits</h4>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle small mb-0" id="tempLogTable">
+                            <thead>
+                                <tr class="text-muted">
+                                    <th>Dish</th>
+                                    <th>Hold Temp</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Herb Roasted Chicken</strong></td>
+                                    <td><span class="fw-bold text-success">145°F</span></td>
+                                    <td><span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-30">Passed</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Stewed Carrots</strong></td>
+                                    <td><span class="fw-bold text-success">142°F</span></td>
+                                    <td><span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-30">Passed</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- Dynamic Portion Scaler and Audit Append JS Logic -->
+<script>
+function scaleRecipes(portions) {
+    const p = parseFloat(portions) || 0;
+    document.getElementById('ing-chicken').innerText = (p * 0.2).toFixed(1) + ' kg';
+    document.getElementById('ing-quinoa').innerText = (p * 0.15).toFixed(1) + ' kg';
+    document.getElementById('ing-greens').innerText = (p * 0.1).toFixed(1) + ' kg';
+}
+
+function appendSafetyLog() {
+    const dish = document.getElementById('dishName').value;
+    const hold = document.getElementById('holdTemp').value;
+    const table = document.getElementById('tempLogTable').getElementsByTagName('tbody')[0];
+    
+    const newRow = table.insertRow(0);
+    newRow.innerHTML = `
+        <td><strong>${dish}</strong></td>
+        <td><span class="fw-bold text-success">${hold}°F</span></td>
+        <td><span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-30">Passed</span></td>
+    `;
+    alert('HACCP Temperature Log Appended and Sign-Off Locked!');
+}
+</script>
+{% endblock %}

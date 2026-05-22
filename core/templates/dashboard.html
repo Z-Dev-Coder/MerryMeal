@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+
+{% block title %}MIS Executive Analytics Dashboard - MerryMeal{% endblock %}
+
+{% block content %}
+<section class="py-5" aria-labelledby="dashboard-title">
+    <div class="container py-3">
+        <!-- Header -->
+        <div class="row align-items-center mb-5 g-4 fade-in-slide">
+            <div class="col-md-8">
+                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-20 px-3 py-2 rounded-pill mb-2"><i class="bi bi-graph-up-arrow me-1"></i>Administrative MIS Analytics Suite</span>
+                <h1 class="fw-extrabold fs-2 mb-2" id="dashboard-title">Executive MIS Analytics Dashboard</h1>
+                <p class="text-muted mb-0">Track system health parameters, total daily servings metrics, volunteer logistics efficiency index, and export administrative audits.</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <span class="text-muted d-block small">Last System Sync: Just Now</span>
+                <span class="badge bg-success bg-opacity-15 text-success"><i class="bi bi-arrow-repeat me-1 animate-spin"></i>Operational Live</span>
+            </div>
+        </div>
+
+        <!-- 4-Card Analytics Stats Row -->
+        <div class="row g-4 mb-5 fade-in-slide" style="animation-delay: 0.1s;">
+            <!-- Servings -->
+            <div class="col-6 col-lg-3">
+                <div class="p-4 bg-white rounded-5 shadow-sm border border-light text-center">
+                    <span class="d-block text-muted small mb-1 fw-bold">TOTAL MEALS SERVED</span>
+                    <strong class="fs-1 text-primary">14,250</strong>
+                    <span class="d-block text-success small mt-1 font-semibold"><i class="bi bi-caret-up-fill me-1"></i>+15.2% MoM</span>
+                </div>
+            </div>
+            <!-- Members -->
+            <div class="col-6 col-lg-3">
+                <div class="p-4 bg-white rounded-5 shadow-sm border border-light text-center">
+                    <span class="d-block text-muted small mb-1 fw-bold">ACTIVE SENIORS</span>
+                    <strong class="fs-1 text-primary">1,240</strong>
+                    <span class="d-block text-success small mt-1 font-semibold"><i class="bi bi-caret-up-fill me-1"></i>+8.4% MoM</span>
+                </div>
+            </div>
+            <!-- Riders -->
+            <div class="col-6 col-lg-3">
+                <div class="p-4 bg-white rounded-5 shadow-sm border border-light text-center">
+                    <span class="d-block text-muted small mb-1 fw-bold">ACTIVE RIDERS</span>
+                    <strong class="fs-1 text-primary">42</strong>
+                    <span class="d-block text-muted small mt-1 font-semibold"><i class="bi bi-dot me-1"></i>3 Peak Radius</span>
+                </div>
+            </div>
+            <!-- Kitchens -->
+            <div class="col-6 col-lg-3">
+                <div class="p-4 bg-white rounded-5 shadow-sm border border-light text-center">
+                    <span class="d-block text-muted small mb-1 fw-bold">PARTNER KITCHENS</span>
+                    <strong class="fs-1 text-primary">8</strong>
+                    <span class="d-block text-success small mt-1 font-semibold"><i class="bi bi-caret-up-fill me-1"></i>+1 Outpost</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            
+            <!-- Left Column: Graphical Charts (60%) -->
+            <div class="col-lg-7 fade-in-slide" style="animation-delay: 0.2s;">
+                <div class="p-4 bg-white rounded-5 shadow-sm border border-light mb-4">
+                    <h3 class="fw-bold fs-4 mb-3 text-primary"><i class="bi bi-activity me-2 text-accent"></i>Monthly Delivery Volumes</h3>
+                    <p class="text-muted small mb-4">Servings growth curve spanning January to May operational quarters.</p>
+                    
+                    <!-- Styled Custom SVG Growth Chart -->
+                    <div class="bg-light p-2 rounded-4 border border-light text-center mb-3">
+                        <svg viewBox="0 0 500 200" style="background-color: #f8fafc; border-radius: 12px; width: 100%; max-height: 250px;">
+                            <!-- Grid Lines -->
+                            <line x1="50" y1="20" x2="450" y2="20" stroke="#e2e8f0" stroke-width="1"/>
+                            <line x1="50" y1="70" x2="450" y2="70" stroke="#e2e8f0" stroke-width="1"/>
+                            <line x1="50" y1="120" x2="450" y2="120" stroke="#e2e8f0" stroke-width="1"/>
+                            <line x1="50" y1="170" x2="450" y2="170" stroke="#cbd5e1" stroke-width="1.5"/>
+
+                            <!-- Y-Axis Labels -->
+                            <text x="15" y="25" font-size="8" font-family="'Outfit'" fill="#64748b">15K</text>
+                            <text x="15" y="75" font-size="8" font-family="'Outfit'" fill="#64748b">10K</text>
+                            <text x="15" y="125" font-size="8" font-family="'Outfit'" fill="#64748b">5K</text>
+                            <text x="15" y="175" font-size="8" font-family="'Outfit'" fill="#64748b">0</text>
+
+                            <!-- Gradient Definition -->
+                            <defs>
+                                <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#4f46e5" stop-opacity="0.3"/>
+                                    <stop offset="100%" stop-color="#4f46e5" stop-opacity="0.0"/>
+                                </linearGradient>
+                            </defs>
+
+                            <!-- Area Under Chart -->
+                            <path d="M 50 170 L 50 140 L 150 110 L 250 80 L 350 40 L 450 20 L 450 170 Z" fill="url(#chartGrad)"/>
+
+                            <!-- Chart Line -->
+                            <path d="M 50 140 L 150 110 L 250 80 L 350 40 L 450 20" fill="none" stroke="#4f46e5" stroke-width="3" stroke-linecap="round"/>
+
+                            <!-- Data Points -->
+                            <circle cx="50" cy="140" r="5" fill="#4f46e5" stroke="#ffffff" stroke-width="2"/>
+                            <circle cx="150" cy="110" r="5" fill="#4f46e5" stroke="#ffffff" stroke-width="2"/>
+                            <circle cx="250" cy="80" r="5" fill="#4f46e5" stroke="#ffffff" stroke-width="2"/>
+                            <circle cx="350" cy="40" r="5" fill="#4f46e5" stroke="#ffffff" stroke-width="2"/>
+                            <circle cx="450" cy="20" r="5" fill="#4f46e5" stroke="#ffffff" stroke-width="2"/>
+
+                            <!-- X-Axis Labels -->
+                            <text x="40" y="190" font-size="9" font-family="'Outfit'" fill="#64748b" font-weight="bold">Jan</text>
+                            <text x="140" y="190" font-size="9" font-family="'Outfit'" fill="#64748b" font-weight="bold">Feb</text>
+                            <text x="240" y="190" font-size="9" font-family="'Outfit'" fill="#64748b" font-weight="bold">Mar</text>
+                            <text x="340" y="190" font-size="9" font-family="'Outfit'" fill="#64748b" font-weight="bold">Apr</text>
+                            <text x="440" y="190" font-size="9" font-family="'Outfit'" fill="#64748b" font-weight="bold">May</text>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Administrative Report Generator (40%) -->
+            <div class="col-lg-5 fade-in-slide" style="animation-delay: 0.3s;">
+                <div class="p-4 bg-white rounded-5 shadow-sm border border-light">
+                    <h3 class="fw-bold fs-4 mb-3 text-primary"><i class="bi bi-file-earmark-pdf me-2 text-accent"></i>Audit Report Compiler</h3>
+                    <p class="text-muted small mb-4">Export authenticated CSV data structures, regional dispatch efficiency summaries, and safety logs.</p>
+                    
+                    <form onsubmit="event.preventDefault(); compileReport();">
+                        <div class="mb-3">
+                            <label for="reportType" class="form-label fw-bold">Select Report Blueprint</label>
+                            <select class="form-select bg-light border-0" id="reportType" required>
+                                <option value="financial" selected>Capital Pledges & Donor Ledger Summary</option>
+                                <option value="logistics">GIS Route Dispatch & Haversine Distance Audit</option>
+                                <option value="safety">HACCP Kitchen Temperature Compliance log</option>
+                                <option value="reassessment">180-Day Member Need Reassessment Calendar</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reportFormat" class="form-label fw-bold">Output Formats</label>
+                            <select class="form-select bg-light border-0" id="reportFormat" required>
+                                <option value="pdf" selected>Adobe PDF (.pdf)</option>
+                                <option value="csv">Excel Spreadsheet (.csv)</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-premium w-100 py-3">Compile & Export Audit Report</button>
+                    </form>
+
+                    <!-- Export Success Notification -->
+                    <div id="exportAlert" class="d-none mt-4 p-3 bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-4 text-center small">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- Simulated Report Compilation JS -->
+<script>
+function compileReport() {
+    const select = document.getElementById('reportType');
+    const name = select.options[select.selectedIndex].text;
+    const format = document.getElementById('reportFormat').value.toUpperCase();
+    const alertDiv = document.getElementById('exportAlert');
+    
+    alertDiv.classList.remove('d-none');
+    alertDiv.innerHTML = `
+        <i class="bi bi-check-circle-fill text-success fs-4 d-block mb-1"></i>
+        <strong>${format} Report Successfully Compiled!</strong><br>
+        <span class="text-muted small">Generated matching details: "MerryMeal_Report_${Date.now()}.${format.toLowerCase()}"</span>
+    `;
+    
+    alert('Administrative compilation complete! Executing export download.');
+}
+</script>
+{% endblock %}
