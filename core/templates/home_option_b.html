@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+
+{% block title %}MerryMeal Option B - Full-Width Centered Progress Flow{% endblock %}
+
+{% block content %}
+<!-- Option B: Full-Width Centered Hero -->
+<section class="hero-section text-center py-5 position-relative" aria-labelledby="hero-title-b" style="background: radial-gradient(circle at 50% 30%, rgba(79, 70, 229, 0.08), transparent 60%);">
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 fade-in-slide">
+                <span class="hero-subtitle mb-2 d-inline-block"><i class="bi bi-geo-alt-fill text-accent me-1"></i>Active Regional Distribution</span>
+                <h1 class="hero-title px-md-4" id="hero-title-b">Nourishing Neighbors, <span>Empowering Independence</span></h1>
+                <p class="hero-desc mx-auto fs-5 mb-4">We deliver hot, certified-nutritious noon meals Monday through Friday to seniors and individuals unable to leave their homes, guaranteeing safety and warmth with every visit.</p>
+                <div class="d-flex flex-wrap gap-3 justify-content-center">
+                    <a href="{% url 'register' %}" class="btn btn-premium px-5 py-3 fs-5" id="hero-btn-join-b">Apply for Onboarding</a>
+                    <a href="#geofence-checker" class="btn btn-outline-premium px-4 py-3 fs-5" id="hero-btn-checker">Check Your Service Area</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Geofence Checker Interactive Widget -->
+<section class="py-5 bg-white border-top border-bottom" id="geofence-checker" aria-labelledby="checker-title">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-7 text-center mb-4">
+                <h2 class="fw-bold fs-3" id="checker-title">Find Out If We Deliver to Your Door</h2>
+                <p class="text-muted">Type in your address or postal code below to simulate our automatic 10km Haversine distance geofence checking tool.</p>
+            </div>
+            <div class="col-lg-6">
+                <div class="p-4 bg-light rounded-4 border shadow-sm">
+                    <form id="geofenceForm" onsubmit="event.preventDefault(); checkDistance();">
+                        <div class="mb-3">
+                            <label for="addressInput" class="form-label fw-bold">Enter Address or Postal Code</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-geo-alt-fill text-primary"></i></span>
+                                <input type="text" id="addressInput" class="form-control" placeholder="e.g. 100 Main St, or 90210" required>
+                                <button type="submit" class="btn btn-premium px-4">Verify Route</button>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="checkerResult" class="d-none mt-3 p-3 rounded-3 border">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Chevron Process Flow Layout -->
+<section class="py-5" id="delivery-flow" aria-labelledby="flow-title">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold fs-2" id="flow-title">Our Structured Delivery Flow</h2>
+            <p class="text-muted mx-auto" style="max-width: 600px;">Every meal is logged, tested, and tracked dynamically from preparation to hand-off.</p>
+        </div>
+        <div class="row g-4 position-relative">
+            <!-- Step 1 -->
+            <div class="col-md-4 text-center">
+                <div class="premium-card p-4 d-flex flex-column align-items-center relative">
+                    <div class="step-number bg-primary text-white d-flex align-items-center justify-content-center rounded-circle fs-4 fw-bold mb-3" style="width: 50px; height: 50px;">1</div>
+                    <h3 class="fw-bold fs-4 mb-2">1. Dynamic Intake</h3>
+                    <p class="text-muted small">Senior details are geolocated automatically. Those within our 10km active perimeter qualify for daily hot noon plates, while others receive scheduled frozen delivery.</p>
+                </div>
+            </div>
+            <!-- Step 2 -->
+            <div class="col-md-4 text-center">
+                <div class="premium-card p-4 d-flex flex-column align-items-center relative">
+                    <div class="step-number bg-primary text-white d-flex align-items-center justify-content-center rounded-circle fs-4 fw-bold mb-3" style="width: 50px; height: 50px;">2</div>
+                    <h3 class="fw-bold fs-4 mb-2">2. Safety-Audited Cooking</h3>
+                    <p class="text-muted small">Our kitchen facilities track portions dynamically based on active allergy parameters and input digital temperature hold safety signatures (>140°F) before dispatch.</p>
+                </div>
+            </div>
+            <!-- Step 3 -->
+            <div class="col-md-4 text-center">
+                <div class="premium-card p-4 d-flex flex-column align-items-center relative">
+                    <div class="step-number bg-primary text-white d-flex align-items-center justify-content-center rounded-circle fs-4 fw-bold mb-3" style="width: 50px; height: 50px;">3</div>
+                    <h3 class="fw-bold fs-4 mb-2">3. GIS-Optimized Delivery</h3>
+                    <p class="text-muted small">Volunteer riders receive optimized routes based on their vehicles, complete drop-offs, record client wellness remarks, and upload signatures/photo proof.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Onboarding Roles Navigation Grid -->
+<section class="py-5 bg-light border-top" id="onboarding-roles-b" aria-labelledby="roles-title-b">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold fs-2" id="roles-title-b">Ready to Join the Network?</h2>
+            <p class="text-muted">Select your registration access portal to begin onboarding.</p>
+        </div>
+        <div class="row g-4 justify-content-center">
+            <!-- Card 1 -->
+            <div class="col-md-6 col-lg-3">
+                <div class="premium-card d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="card-icon-wrapper d-flex align-items-center justify-content-center">
+                            <i class="bi bi-person-heart"></i>
+                        </div>
+                        <h3 class="fw-bold fs-4 mb-2">Senior Member</h3>
+                        <p class="text-muted small">Request hot meal delivery under our dietary compliance safety framework.</p>
+                    </div>
+                    <a href="{% url 'register' %}?role=member" class="btn btn-premium w-100 mt-4">Apply for Meals</a>
+                </div>
+            </div>
+            <!-- Card 2 -->
+            <div class="col-md-6 col-lg-3">
+                <div class="premium-card d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="card-icon-wrapper d-flex align-items-center justify-content-center">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        <h3 class="fw-bold fs-4 mb-2">Family Caregiver</h3>
+                        <p class="text-muted small">Coordinate schedules and oversee profiles for dependent family members.</p>
+                    </div>
+                    <a href="{% url 'register' %}?role=caregiver" class="btn btn-premium w-100 mt-4">Manage Care</a>
+                </div>
+            </div>
+            <!-- Card 3 -->
+            <div class="col-md-6 col-lg-3">
+                <div class="premium-card d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="card-icon-wrapper d-flex align-items-center justify-content-center">
+                            <i class="bi bi-bicycle"></i>
+                        </div>
+                        <h3 class="fw-bold fs-4 mb-2">Volunteer Rider</h3>
+                        <p class="text-muted small">Deliver food and conduct welfare checks for local homebound seniors.</p>
+                    </div>
+                    <a href="{% url 'register' %}?role=volunteer" class="btn btn-premium w-100 mt-4">Drive for Us</a>
+                </div>
+            </div>
+            <!-- Card 4 -->
+            <div class="col-md-6 col-lg-3">
+                <div class="premium-card d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="card-icon-wrapper d-flex align-items-center justify-content-center">
+                            <i class="bi bi-house-door-fill"></i>
+                        </div>
+                        <h3 class="fw-bold fs-4 mb-2">Kitchen Partner</h3>
+                        <p class="text-muted small">Register your facility to prepare nutritionally customized diet portions.</p>
+                    </div>
+                    <a href="{% url 'register' %}?role=partner" class="btn btn-premium w-100 mt-4">Partner Kitchen</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Mock Javascript Geofencing Simulation -->
+<script>
+function checkDistance() {
+    const query = document.getElementById('addressInput').value.trim();
+    const resultDiv = document.getElementById('checkerResult');
+    
+    if (!query) return;
+    
+    resultDiv.classList.remove('d-none', 'bg-success', 'bg-warning', 'text-success', 'text-warning');
+    
+    // Simulate dynamic geofence routing checks using virtual addresses
+    const hash = query.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const distanceKm = ((hash % 150) / 10).toFixed(2); // Mock distance in km (0.00 to 14.90)
+    const isHotEligible = parseFloat(distanceKm) <= 10.0;
+    
+    if (isHotEligible) {
+        resultDiv.classList.add('bg-success', 'bg-opacity-10', 'text-success', 'border-success', 'border-opacity-30');
+        resultDiv.innerHTML = `
+            <h5 class="fw-bold mb-1"><i class="bi bi-check-circle-fill me-2"></i>Within Hot Delivery Range!</h5>
+            <p class="mb-0 small">Calculated distance is <strong>${distanceKm} km</strong> from our central hub. You qualify for daily hot noon meals (M-F).</p>
+        `;
+    } else {
+        resultDiv.classList.add('bg-warning', 'bg-opacity-10', 'text-warning', 'border-warning', 'border-opacity-30');
+        resultDiv.innerHTML = `
+            <h5 class="fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill me-2"></i>Beyond 10km Perimeter</h5>
+            <p class="mb-0 small">Calculated distance is <strong>${distanceKm} km</strong> from our central hub. You qualify for weekly frozen meal support bundles.</p>
+        `;
+    }
+}
+</script>
+{% endblock %}

@@ -4,6 +4,10 @@ from . import views
 urlpatterns = [
     # General Routing
     path('', views.home, name='home'),
+    path('home-original/', views.home_original, name='home_original'),
+    path('home-option-a/', views.home_option_a, name='home_option_a'),
+    path('home-option-b/', views.home_option_b, name='home_option_b'),
+    path('home-option-c/', views.home_option_c, name='home_option_c'),
     path('register/', views.register, name='register'),
     path('login/', views.user_login, name='user_login'),
     path('logout/', views.user_logout, name='user_logout'),
