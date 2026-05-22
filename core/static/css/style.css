@@ -426,3 +426,58 @@ body.high-contrast-mode .badge-a11y, body.high-contrast-mode .badge-safety {
     color: #ffff00;
     border: 2px solid #ffff00;
 }
+
+/* --- 11. Accessible Scroll Reveal Animations --- */
+.scroll-reveal {
+    opacity: 0;
+    will-change: transform, opacity;
+    transition: opacity 1.2s cubic-bezier(0.25, 0.8, 0.25, 1),
+                transform 1.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* Scroll Direction Variations */
+.scroll-reveal.reveal-up {
+    transform: translateY(40px);
+}
+
+.scroll-reveal.reveal-left {
+    transform: translateX(-40px);
+}
+
+.scroll-reveal.reveal-right {
+    transform: translateX(40px);
+}
+
+.scroll-reveal.reveal-scale {
+    transform: scale(0.95);
+}
+
+/* Active State (Triggered by Intersection Observer) */
+.scroll-reveal.active {
+    opacity: 1;
+    transform: translateY(0) translateX(0) scale(1);
+}
+
+/* Modular Sequential Transition Delays */
+.scroll-reveal.delay-100 {
+    transition-delay: 0.1s;
+}
+.scroll-reveal.delay-200 {
+    transition-delay: 0.2s;
+}
+.scroll-reveal.delay-300 {
+    transition-delay: 0.3s;
+}
+.scroll-reveal.delay-400 {
+    transition-delay: 0.4s;
+}
+
+/* WCAG 2.1 AA Motion Accessibility Override */
+@media (prefers-reduced-motion: reduce) {
+    .scroll-reveal {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+    }
+}
+
