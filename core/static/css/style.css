@@ -1,0 +1,407 @@
+/* -------------------------------------------------------------
+ * MERRYMEAL UNIFIED PORTAL - PREMIUM CUSTOM DESIGN SYSTEM
+ * Accessibility First (WCAG 2.1 AA) | Modern Rich Aesthetics
+ * ------------------------------------------------------------- */
+
+/* --- 1. Custom Variable Tokens (HSL Color Palettes) --- */
+:root {
+    /* Fonts */
+    --font-heading: 'Outfit', sans-serif;
+    --font-body: 'Inter', sans-serif;
+
+    /* Color Tokens (Base HSL Palette - Harmonious Deep Indigo & Warm Amber) */
+    --hue-primary: 243;   /* Deep Indigo */
+    --hue-accent: 38;     /* Warm Amber / Golden Honey */
+    --hue-success: 142;   /* Emerald Green */
+    --hue-neutral: 220;   /* Slate Grays */
+
+    /* Core Themes variables */
+    --bg-base-h: 0;
+    --bg-base-s: 0%;
+    --bg-base-l: 98%;      /* Very Light Gray */
+    --bg-base: hsl(var(--bg-base-h), var(--bg-base-s), var(--bg-base-l));
+    
+    --bg-surface-l: 100%;
+    --bg-surface: hsl(0, 0%, var(--bg-surface-l));
+
+    --text-main: hsl(var(--hue-neutral), 30%, 15%);
+    --text-muted: hsl(var(--hue-neutral), 15%, 45%);
+    
+    --color-primary: hsl(var(--hue-primary), 75%, 50%);
+    --color-primary-hover: hsl(var(--hue-primary), 75%, 40%);
+    
+    --color-accent: hsl(var(--hue-accent), 95%, 48%);
+    --color-accent-hover: hsl(var(--hue-accent), 95%, 38%);
+
+    --color-success: hsl(var(--hue-success), 70%, 42%);
+
+    /* Focus & Outlines */
+    --outline-color: hsl(var(--hue-accent), 95%, 48%);
+    --outline-focus: 3px solid var(--outline-color);
+    --border-radius: 16px;
+    --border-radius-sm: 8px;
+    --transition-smooth: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    
+    /* Box Shadows */
+    --shadow-premium: 0 10px 30px rgba(79, 70, 229, 0.08), 0 1px 8px rgba(79, 70, 229, 0.04);
+    --shadow-hover: 0 20px 40px rgba(79, 70, 229, 0.15), 0 1px 12px rgba(79, 70, 229, 0.06);
+    --shadow-glass: inset 0 1px 1px rgba(255, 255, 255, 0.6), 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+}
+
+/* --- 2. High Contrast Theme Modifier (WCAG 2.1 AAA Compliant) --- */
+body.high-contrast-mode {
+    --bg-base-h: 0;
+    --bg-base-s: 0%;
+    --bg-base-l: 5%;       /* Pure Dark Black */
+    --bg-base: #000000;
+    
+    --bg-surface-l: 10%;
+    --bg-surface: #111111;
+
+    --text-main: #ffff00;   /* High visibility Yellow */
+    --text-muted: #ffffff;  /* High visibility White */
+    
+    --color-primary: #ffff00;
+    --color-primary-hover: #ffffff;
+    
+    --color-accent: #00ffff;  /* Cyan */
+    --color-accent-hover: #ffffff;
+
+    --color-success: #00ff00; /* Neon Green */
+    --outline-color: #ffff00;
+    --shadow-premium: none;
+    --shadow-hover: none;
+    --shadow-glass: none;
+
+    border: 2px solid #ffff00;
+}
+
+/* --- 3. Base Styles & Global Resets --- */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-base);
+    color: var(--text-main);
+    font-family: var(--font-body);
+    transition: background-color 0.3s ease, color 0.3s ease;
+    overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-main);
+}
+
+a {
+    color: var(--color-primary);
+    text-decoration: none;
+    transition: var(--transition-smooth);
+}
+a:hover {
+    color: var(--color-primary-hover);
+}
+
+/* --- 4. Premium Layout Containers (Glassmorphism Navbar & Footers) --- */
+.navbar-glass {
+    background: rgba(var(--bg-surface-l), 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(79, 70, 229, 0.08);
+    box-shadow: var(--shadow-glass);
+    transition: var(--transition-smooth);
+}
+body.high-contrast-mode .navbar-glass {
+    background: #000000;
+    border-bottom: 2px solid #ffff00;
+}
+
+.brand-text {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 1.5rem;
+    letter-spacing: -0.03em;
+    color: var(--text-main);
+}
+.brand-text span {
+    color: var(--color-accent);
+}
+
+.logo-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    color: white;
+    border-radius: 12px;
+    font-size: 1.25rem;
+    animation: heartPulse 2.5s infinite ease-in-out;
+}
+body.high-contrast-mode .logo-icon {
+    background: #ffff00;
+    color: #000000;
+    border: 2px solid #ffff00;
+}
+
+/* --- 5. Custom Button Systems --- */
+.btn-premium {
+    background: linear-gradient(135deg, var(--color-primary), hsl(var(--hue-primary), 75%, 60%));
+    color: white !important;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    padding: 10px 24px;
+    border-radius: var(--border-radius-sm);
+    border: none;
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+    transition: var(--transition-smooth);
+}
+.btn-premium:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
+}
+body.high-contrast-mode .btn-premium {
+    background: #ffff00;
+    color: #000000 !important;
+    border: 2px solid #ffff00;
+    box-shadow: none;
+}
+
+.btn-outline-premium {
+    background: transparent;
+    color: var(--text-main) !important;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    padding: 9px 23px;
+    border-radius: var(--border-radius-sm);
+    border: 2px solid rgba(79, 70, 229, 0.2);
+    transition: var(--transition-smooth);
+}
+.btn-outline-premium:hover {
+    border-color: var(--color-primary);
+    background: rgba(79, 70, 229, 0.05);
+}
+body.high-contrast-mode .btn-outline-premium {
+    color: #ffff00 !important;
+    border: 2px solid #ffff00;
+}
+
+/* --- 6. Accessibility (A11y) Panel Controls --- */
+.a11y-controls-group {
+    background: rgba(var(--bg-surface-l), 0.1);
+    border-radius: 30px;
+    padding: 4px 8px;
+    border: 1px solid rgba(79, 70, 229, 0.1);
+}
+body.high-contrast-mode .a11y-controls-group {
+    border: 2px solid #ffff00;
+}
+
+.a11y-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: var(--bg-surface);
+    color: var(--text-main);
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: var(--transition-smooth);
+}
+.a11y-btn i {
+    font-size: 1.1rem;
+}
+.a11y-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    margin-top: -2px;
+}
+.a11y-btn:hover, .a11y-btn:focus {
+    background: var(--color-accent);
+    color: white;
+    outline: var(--outline-focus);
+}
+body.high-contrast-mode .a11y-btn {
+    border: 2px solid #ffff00;
+    background: #000000;
+    color: #ffff00;
+}
+body.high-contrast-mode .a11y-btn:hover {
+    background: #ffff00;
+    color: #000000;
+}
+
+/* --- 7. Hero Banners & Layout Grids --- */
+.hero-section {
+    position: relative;
+    padding: 100px 0;
+    background: radial-gradient(circle at 90% 10%, rgba(79, 70, 229, 0.05), transparent 45%),
+                radial-gradient(circle at 10% 90%, rgba(245, 158, 11, 0.05), transparent 45%);
+}
+body.high-contrast-mode .hero-section {
+    background: #000000;
+}
+
+.hero-subtitle {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    color: var(--color-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.9rem;
+}
+body.high-contrast-mode .hero-subtitle {
+    color: #ffff00;
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 20px;
+}
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 2.5rem;
+    }
+}
+.hero-title span {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+body.high-contrast-mode .hero-title span {
+    background: none;
+    -webkit-background-clip: unset;
+    -webkit-text-fill-color: unset;
+    color: #00ffff;
+}
+
+.hero-desc {
+    font-size: 1.15rem;
+    color: var(--text-muted);
+    max-width: 600px;
+    margin-bottom: 30px;
+}
+
+/* --- 8. Premium Cards & Hover Interactions --- */
+.premium-card {
+    background: var(--bg-surface);
+    border-radius: var(--border-radius);
+    border: 1px solid rgba(79, 70, 229, 0.08);
+    box-shadow: var(--shadow-premium);
+    transition: var(--transition-smooth);
+    padding: 30px;
+    height: 100%;
+}
+.premium-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-hover);
+    border-color: rgba(79, 70, 229, 0.15);
+}
+body.high-contrast-mode .premium-card {
+    border: 2px solid #ffff00;
+    background: #111111;
+}
+
+.card-icon-wrapper {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    background: rgba(79, 70, 229, 0.06);
+    color: var(--color-primary);
+    font-size: 1.75rem;
+    margin-bottom: 20px;
+}
+body.high-contrast-mode .card-icon-wrapper {
+    background: #ffff00;
+    color: #000000;
+    border: 2px solid #ffff00;
+}
+
+/* --- 9. Dynamic Animation keyframes --- */
+@keyframes heartPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.08);
+    }
+}
+
+.fade-in-slide {
+    animation: fadeInSlide 1s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+}
+
+@keyframes fadeInSlide {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --- 10. Footer Premium Stylings --- */
+.footer-glass {
+    background: #0f172a; /* Slate 900 - Professional Dark Theme contrast */
+    color: #94a3b8;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+body.high-contrast-mode .footer-glass {
+    background: #000000;
+    border-top: 2px solid #ffff00;
+    color: #ffffff;
+}
+
+.footer-title {
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+body.high-contrast-mode .footer-title {
+    color: #ffff00;
+}
+
+.footer-links li {
+    margin-bottom: 10px;
+}
+.footer-links a {
+    color: #94a3b8;
+}
+.footer-links a:hover {
+    color: var(--color-accent);
+    padding-left: 5px;
+}
+body.high-contrast-mode .footer-links a {
+    color: #ffffff;
+}
+body.high-contrast-mode .footer-links a:hover {
+    color: #ffff00;
+}
+
+.badge-a11y {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    padding: 6px 12px;
+}
+.badge-safety {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    padding: 6px 12px;
+}
+body.high-contrast-mode .badge-a11y, body.high-contrast-mode .badge-safety {
+    background: #000000;
+    color: #ffff00;
+    border: 2px solid #ffff00;
+}
