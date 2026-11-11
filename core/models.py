@@ -23,6 +23,7 @@ class Member(models.Model):
         ('active', 'Active'),
         ('inactive', 'Inactive'),
         ('pending_reassessment', 'Pending Reassessment'),
+        ('waitlist', 'Expansion Waitlist'),
     ]
     SERVICE_CHOICES = [
         ('hot_meal', 'Hot Noon Meal (M-F)'),

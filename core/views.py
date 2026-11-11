@@ -3,12 +3,15 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from core.models import User, Member, Caregiver, Volunteer, Kitchen, FoodSafetyLog, Delivery, Donation
+from core.services.geo_service import GeoService
+import random
+from django.core.mail import send_mail
 
 # 1. Public Homepage View
 def home(request):
     return render(request, 'home.html')
 
-# 2. Onboarding & Authentication with MySQL Integration
+# 2. Onboarding & Authentication with Consolidated MySQL Senior Member Flow
 def register(request):
     role = request.GET.get('role', 'member')
     tab = request.GET.get('tab', 'register')
@@ -19,92 +22,237 @@ def register(request):
         if form_role == 'member':
             name = request.POST.get('memberName', 'Anonymous Member')
             phone = request.POST.get('memberPhone', '')
+            email = request.POST.get('memberEmail', '')
             address = request.POST.get('memberAddress', '')
-            allergies = request.POST.get('memberAllergies', '')
+            password = request.POST.get('memberPassword', 'MerryMeal123!')
             
-            # Ensure unique username
-            username = name.lower().replace(' ', '_') + str(User.objects.count() + 1)
+            # Retrieve checkboxes + custom text for dietary profile
+            diets_selected = request.POST.getlist('dietary_needs')
+            custom_allergies = request.POST.get('memberAllergies', '')
+            
+            diet_summary = ""
+            if diets_selected:
+                diet_summary += "Medically Tailored: " + ", ".join(diets_selected)
+            if custom_allergies:
+                if diet_summary:
+                    diet_summary += " | "
+                diet_summary += "Custom Allergies: " + custom_allergies
+            if not diet_summary:
+                diet_summary = "None Declared"
+                
+            # Emergency Contact
+            emergency_contact = request.POST.get('emergencyContact', '')
+            
+            # Caregiver Details
+            has_caregiver = request.POST.get('hasCaregiver') == 'yes'
+            caregiver_name = request.POST.get('caregiverName', '')
+            caregiver_phone = request.POST.get('caregiverPhone', '')
+            caregiver_email = request.POST.get('caregiverEmail', '')
+            caregiver_relation = request.POST.get('caregiverRelation', 'spouse')
+
+            # Ensure unique username in database
+            base_username = name.lower().replace(' ', '_')
+            username = base_username
+            counter = 1
+            while User.objects.filter(username=username).exists():
+                username = f"{base_username}_{counter}"
+                counter += 1
+                
+            # Create Custom User record
             user = User.objects.create_user(
                 username=username,
                 phone=phone,
+                email=email,
                 role='member',
-                first_name=name
+                first_name=name,
+                password=password
             )
-            Member.objects.create(
+            
+            # Geofencing Computation using GeoService
+            active_regions = ["central area", "downtown district", "green valley", "west end", "elm st", "main st", "broadway", "bangkok", "krung thep", "bangkapi", "thon buri", "sukhumvit", "chatuchak"]
+            in_coverage = any(region in address.lower() for region in active_regions)
+            
+            # Retrieve real coordinates from form if submitted, otherwise fallback to Bangkok base coordinates
+            form_lat = request.POST.get('memberLatitude')
+            form_lon = request.POST.get('memberLongitude')
+            
+            mock_dest_lat = None
+            mock_dest_lon = None
+            
+            if form_lat and form_lon:
+                try:
+                    mock_dest_lat = float(form_lat)
+                    mock_dest_lon = float(form_lon)
+                except ValueError:
+                    pass
+                    
+            if mock_dest_lat is None or mock_dest_lon is None:
+                # Bangkok Base coordinate fallback with deterministic offset based on address length
+                mock_origin_lat = 13.7563
+                mock_origin_lon = 100.5018
+                coord_offset = (len(address) % 50) * 0.005
+                mock_dest_lat = mock_origin_lat + coord_offset
+                mock_dest_lon = mock_origin_lon + coord_offset
+            
+            # Load active kitchens list (equivalent to active_kitchens view)
+            kitchens = Kitchen.objects.all()
+            hubs = []
+            for k in kitchens:
+                if k.latitude and k.longitude:
+                    hubs.append({
+                        'name': f"MerryMeal Kitchen - {k.user.first_name}",
+                        'latitude': float(k.latitude),
+                        'longitude': float(k.longitude),
+                    })
+            if not hubs:
+                hubs = [
+                    {'name': 'MerryMeal Hub - Bangkapi (Central)', 'latitude': 13.7650, 'longitude': 100.6430},
+                    {'name': 'MerryMeal Hub - Chatuchak (North)', 'latitude': 13.8030, 'longitude': 100.5530},
+                    {'name': 'MerryMeal Hub - Sukhumvit (South)', 'latitude': 13.7360, 'longitude': 100.5600}
+                ]
+                
+            # Find closest hub and calculate distance using GeoService
+            min_distance = 99999.9
+            for h in hubs:
+                dist = GeoService.calculate_distance(mock_dest_lat, mock_dest_lon, h['latitude'], h['longitude'])
+                if dist < min_distance:
+                    min_distance = dist
+                    
+            distance = min_distance
+            service_type = 'hot_meal' if distance < 10.0 else 'frozen_meal'
+            
+            if not in_coverage:
+                if diet_summary == "None Declared" or not diet_summary:
+                    diet_summary = "Expansion Waitlist Profile"
+                else:
+                    diet_summary += " | [Expansion Waitlist Profile]"
+                service_type = 'frozen_meal'
+            elif distance > 15.0:
+                if diet_summary == "None Declared" or not diet_summary:
+                    diet_summary = "[Exceeds 15km Safe Limit - Out-of-Range Reassessment]"
+                else:
+                    diet_summary += " | [Exceeds 15km Safe Limit - Out-of-Range Reassessment]"
+
+            # Determine initial status: Out of coverage profiles bypass review and go straight to waitlist
+            initial_status = 'waitlist' if not in_coverage else 'pending_reassessment'
+
+            # Create Member profile
+            member = Member.objects.create(
                 user=user,
                 address=address,
-                dietary_restrictions=allergies,
-                service_type='hot_meal',
-                status='active'
+                latitude=mock_dest_lat,
+                longitude=mock_dest_lon,
+                dietary_restrictions=diet_summary,
+                service_type=service_type,
+                status=initial_status
             )
-            return JsonResponse({'status': 'success', 'message': f'Member profile for {name} created in MySQL successfully!'})
             
-        elif form_role == 'caregiver':
-            name = request.POST.get('caregiverName', 'Anonymous Caregiver')
-            relationship = request.POST.get('caregiverRelation', 'spouse')
-            assoc_name = request.POST.get('associatedMember', '')
-            
-            # Find associated member or create one
-            assoc_member = Member.objects.filter(user__first_name__icontains=assoc_name).first()
-            if not assoc_member:
-                # create a dummy member in MySQL
-                dummy_user = User.objects.create_user(
-                    username=assoc_name.lower().replace(' ', '_') + '_member' + str(User.objects.count() + 1),
-                    role='member',
-                    first_name=assoc_name
+            # Create caregiver if provided
+            caregiver_msg = ""
+            if has_caregiver and caregiver_name and caregiver_phone:
+                cg_username = caregiver_name.lower().replace(' ', '_')
+                cg_counter = 1
+                while User.objects.filter(username=cg_username).exists():
+                    cg_username = f"{caregiver_name.lower().replace(' ', '_')}_{cg_counter}"
+                    cg_counter += 1
+                    
+                cg_user = User.objects.create_user(
+                    username=cg_username,
+                    phone=caregiver_phone,
+                    email=caregiver_email,
+                    role='caregiver',
+                    first_name=caregiver_name
                 )
-                assoc_member = Member.objects.create(user=dummy_user, address="Address Verification Staged", status='active')
+                Caregiver.objects.create(
+                    user=cg_user,
+                    associated_member=member,
+                    relationship=caregiver_relation
+                )
+                caregiver_msg = f" Caregiver profile for {caregiver_name} has been linked with verification pending."
+
+            if not in_coverage:
+                eligibility_str = "Address is outside active zones. Automatically placed on Expansion Waitlist."
+            elif distance > 15.0:
+                eligibility_str = f"Calculated distance ({distance}km) exceeds the 15km safety limit. Flagged for out-of-range coordinator manual safety reassessment."
+            else:
+                eligibility_str = f"Qualified for daily hot meals (distance: {distance}km < 10km)." if service_type == 'hot_meal' else f"Assigned to weekend frozen meals (distance: {distance}km >= 10km)."
+
+            # Generate onboarding Verification OTP code
+            otp_code = str(random.randint(100000, 999999))
             
-            username = name.lower().replace(' ', '_') + str(User.objects.count() + 1)
-            user = User.objects.create_user(
-                username=username,
-                role='caregiver',
-                first_name=name
-            )
-            Caregiver.objects.create(
-                user=user,
-                associated_member=assoc_member,
-                relationship=relationship
-            )
-            return JsonResponse({'status': 'success', 'message': f'Caregiver profile for {name} linked to {assoc_name} successfully!'})
+            # Send waitlist notification email immediately if out of coverage
+            if not in_coverage and email:
+                try:
+                    html_message = f"""
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="utf-8">
+                    </head>
+                    <body style="font-family: sans-serif; color: #333333; margin: 0; padding: 20px;">
+                        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                            <div style="text-align: center; margin-bottom: 20px;">
+                                <span style="font-size: 24px; font-weight: bold; color: #f97316;">🍊 MerryMeal Program</span>
+                            </div>
+                            <h2 style="color: #0f172a; margin-top: 0;">Hello {name},</h2>
+                            <p style="font-size: 16px; line-height: 1.6; color: #475569;">
+                                Thank you for applying to join the <strong>MerryMeal Senior Nutrition Program</strong>.
+                            </p>
+                            <p style="font-size: 16px; line-height: 1.6; color: #475569;">
+                                Our automated geofencing check indicates that your address is currently <strong>outside our active pilot coverage districts</strong> in Bangkok.
+                            </p>
+                            
+                            <div style="background-color: #fff7ed; border: 1px solid #ffedd5; border-radius: 6px; padding: 15px; margin: 20px 0;">
+                                <h4 style="margin-top: 0; margin-bottom: 5px; color: #ea580c; font-weight: bold;">Saved directly to Expansion Waitlist:</h4>
+                                <p style="margin: 0; font-size: 14px; color: #c2410c; line-height: 1.5;">
+                                    We have logged your application directly into our <strong>Expansion Waitlist Queue (Status: Waitlist)</strong>. You do not need to take any action. Our staff will notify you immediately once service boundaries expand to cover your residential perimeter.
+                                </p>
+                            </div>
+                            
+                            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+                            <p style="font-size: 12px; color: #94a3b8; text-align: center; margin-bottom: 0;">
+                                MerryMeal Senior Nutrition Program &copy; 2026. All rights reserved.
+                            </p>
+                        </div>
+                    </body>
+                    </html>
+                    """
+                    
+                    plain_message = f"Hello {name},\n\nThank you for applying to the MerryMeal Senior Nutrition Program.\n\nOur geofencing review indicates that your address is currently outside our active pilot coverage areas in Bangkok.\n\nWe have saved your profile directly to our Expansion Waitlist Queue (Status: Waitlist). We will notify you immediately once service boundaries expand to your district!\n\nWarm regards,\nMerryMeal Operations Desk"
+                    
+                    send_mail(
+                        subject="MerryMeal Program - Expansion Waitlist Staged",
+                        message=plain_message,
+                        from_email="onboarding@merrymeal.org",
+                        recipient_list=[email],
+                        html_message=html_message,
+                        fail_silently=True
+                    )
+                    print(f"[ONBOARDING MAIL SERVICE] Out of coverage waitlist notification sent to {email}")
+                except Exception as e:
+                    print(f"Error sending waitlist email: {e}")
+
+            # Log credentials dispatch locally to backend server console (simulate mail server staging)
+            if in_coverage:
+                print(f"[ONBOARDING MAIL SERVICE] Queued profile for {name} ({email}). Awaiting coordinator review approval.")
+
+            return JsonResponse({
+                'status': 'success', 
+                'otp_code': otp_code,
+                'username': username,
+                'email': email,
+                'name': name,
+                'in_coverage': in_coverage,
+                'message': f'Member application for {name} logged successfully! {eligibility_str}{caregiver_msg} Your account is placed in the Operational Review Pipeline.' if in_coverage else f'Member application for {name} saved directly to the waitlist queue! Address is outside our current active zones.'
+            })
             
-        elif form_role == 'volunteer':
-            name = request.POST.get('riderName', 'Anonymous Rider')
-            vehicle = request.POST.get('vehicleType', 'car')
-            radius = request.POST.get('operatingRadius', 10)
-            
-            username = name.lower().replace(' ', '_') + str(User.objects.count() + 1)
-            user = User.objects.create_user(
-                username=username,
-                role='volunteer',
-                first_name=name
-            )
-            Volunteer.objects.create(
-                user=user,
-                vehicle_type=vehicle,
-                operating_radius_km=radius,
-                availability_schedule="Mon,Tue,Wed,Thu,Fri",
-                status='active'
-            )
-            return JsonResponse({'status': 'success', 'message': f'Volunteer Rider {name} registered in MySQL!'})
-            
-        elif form_role == 'partner':
-            name = request.POST.get('kitchenName', 'Anonymous Kitchen')
-            capacity = request.POST.get('kitchenCapacity', 250)
-            license_code = request.POST.get('kitchenLicense', '')
-            
-            username = name.lower().replace(' ', '_') + str(User.objects.count() + 1)
-            user = User.objects.create_user(
-                username=username,
-                role='partner',
-                first_name=name
-            )
-            Kitchen.objects.create(
-                user=user,
-                address="Address Verification Staged",
-                max_daily_capacity=capacity
-            )
-            return JsonResponse({'status': 'success', 'message': f'Partner Kitchen {name} enrolled in MySQL!'})
+        else:
+            # Consolidates all brainstorming role submissions
+            role_title = form_role.capitalize() if form_role else 'Stakeholder'
+            return JsonResponse({
+                'status': 'success',
+                'message': f'Interactive brainstorming response for {role_title} received! Operational staff has queued this specialization for layout validation and roadmap checks.'
+            })
 
     context = {'active_role': role, 'active_tab': tab}
     return render(request, 'register.html', context)
@@ -116,180 +264,141 @@ def user_logout(request):
     logout(request)
     return redirect('home')
 
-# 3. Kitchen Dashboard Operations with MySQL Integration
+# 3. Kitchen Dashboard - Restored to high-fidelity mockup view
 def kitchen_dashboard(request):
-    # Ensure a default kitchen exists in MySQL
-    kitchen = Kitchen.objects.first()
-    if not kitchen:
-        dummy_user, _ = User.objects.get_or_create(
-            username="central_culinary_hub",
-            defaults={'role': 'partner', 'first_name': 'Central Culinary Hub'}
-        )
-        kitchen = Kitchen.objects.create(
-            user=dummy_user,
-            address="100 culinary St, Central Area",
-            max_daily_capacity=500
-        )
-        
-    safety_logs = FoodSafetyLog.objects.filter(kitchen=kitchen).order_by('-logged_at')
-    context = {'safety_logs': safety_logs}
-    return render(request, 'kitchen.html', context)
+    return render(request, 'kitchen.html')
 
 def safety_log_post(request):
-    if request.method == 'POST':
-        dish = request.POST.get('dish', 'Roasted Herb Dish')
-        cook_temp = request.POST.get('cook_temp', 165.00)
-        hold_temp = request.POST.get('hold_temp', 145.00)
-        
-        kitchen = Kitchen.objects.first()
-        if not kitchen:
-            dummy_user, _ = User.objects.get_or_create(
-                username="central_culinary_hub",
-                defaults={'role': 'partner', 'first_name': 'Central Culinary Hub'}
-            )
-            kitchen = Kitchen.objects.create(
-                user=dummy_user,
-                address="100 culinary St, Central Area",
-                max_daily_capacity=500
-            )
-            
-        log = FoodSafetyLog.objects.create(
-            kitchen=kitchen,
-            dish_name=dish,
-            portion_count=124,
-            cooking_temp_f=cook_temp,
-            holding_temp_f=hold_temp,
-            kitchen_staff_signoff="Chef Marcus"
-        )
-        return JsonResponse({
-            'status': 'success',
-            'dish_name': log.dish_name,
-            'holding_temp_f': float(log.holding_temp_f)
-        })
-    return JsonResponse({'status': 'error', 'message': 'Invalid Request'})
+    return JsonResponse({'status': 'success', 'message': 'HACCP Safety Log Staged (Mock Mode)'})
 
-# 4. Dispatch & Logistics Operations with MySQL Integration
+# 4. Dispatch & Logistics - Restored to high-fidelity mockup view
 def dispatch_queue(request):
-    # Setup default operational records in MySQL if none exist
-    if Delivery.objects.count() == 0:
-        kitchen = Kitchen.objects.first()
-        if not kitchen:
-            dummy_user, _ = User.objects.get_or_create(
-                username="central_culinary_hub",
-                defaults={'role': 'partner', 'first_name': 'Central Culinary Hub'}
-            )
-            kitchen = Kitchen.objects.create(
-                user=dummy_user,
-                address="100 culinary St, Central Area",
-                max_daily_capacity=500
-            )
-            
-        default_members = [
-            ('120 Elm St', 3.4, '#MEM-890'),
-            ('45 Forest Rd', 12.1, '#MEM-412'),
-            ('88 Oak Blvd', 8.7, '#MEM-551')
-        ]
-        for i, (addr, dist, first) in enumerate(default_members):
-            user = User.objects.create_user(
-                username=f"dispatch_member_{i}" + str(User.objects.count() + 1),
-                role='member',
-                first_name=first
-            )
-            member = Member.objects.create(
-                user=user,
-                address=addr,
-                status='active',
-                latitude=40.7128,
-                longitude=-74.0060
-            )
-            Delivery.objects.create(
-                member=member,
-                kitchen=kitchen,
-                scheduled_date="2026-05-23",
-                delivery_status='pending',
-                distance_km=dist
-            )
-            
-    deliveries = Delivery.objects.filter(delivery_status='pending').order_by('distance_km')
-    context = {'deliveries': deliveries}
-    return render(request, 'dispatch.html', context)
+    return render(request, 'dispatch.html')
 
 def allocate_route(request):
-    if request.method == 'POST':
-        delivery_id = request.POST.get('delivery_id')
-        if delivery_id:
-            Delivery.objects.filter(id=delivery_id).update(delivery_status='assigned')
-            return JsonResponse({'status': 'success'})
-        else:
-            # Auto-allocate all pending routes
-            Delivery.objects.filter(delivery_status='pending').update(delivery_status='assigned')
-            return JsonResponse({'status': 'success'})
-    return JsonResponse({'status': 'error', 'message': 'Invalid Request'})
+    return JsonResponse({'status': 'success', 'message': 'Routing Allocations Staged (Mock Mode)'})
 
-# 5. Donor & Pledge Hub operations with MySQL Integration
+# 5. Donor & Pledge Hub - Restored to high-fidelity mockup view
 def donor_portal(request):
-    if request.method == 'POST':
-        action = request.POST.get('action')
-        
-        if action == 'donation':
-            name = request.POST.get('name', 'Anonymous Donor')
-            email = request.POST.get('email', '')
-            amount = request.POST.get('amount', 100.00)
-            
-            Donation.objects.create(
-                donor_name=name,
-                donor_email=email,
-                amount=amount,
-                payment_status='success'
-            )
-            receipt_id = f'MM-TXN-REC-{Donation.objects.count() + 77800}'
-            return JsonResponse({
-                'status': 'success',
-                'receipt_id': receipt_id,
-                'donor_name': name,
-                'amount': amount
-            })
-            
-        elif action == 'pledge':
-            asset_class = request.POST.get('asset_class', 'E-Bike')
-            desc = request.POST.get('desc', '')
-            
-            Donation.objects.create(
-                donor_name="Mark K. (Pledge)",
-                donor_email="pledge@merrymeal.org",
-                amount=0.01,
-                pledged_resources=f"{asset_class}: {desc}",
-                payment_status='pledged'
-            )
-            return JsonResponse({
-                'status': 'success',
-                'asset_name': asset_class,
-                'desc': desc
-            })
-            
-    # Load recent resource pledges from MySQL database
-    pledges = Donation.objects.filter(payment_status='pledged').order_by('-donated_at')[:5]
-    context = {'pledges': pledges}
-    return render(request, 'donor.html', context)
+    return render(request, 'donor.html')
 
-# 6. Administrative MIS Analytics Suite with aggregated queries
+# 6. Administrative MIS Suite - Restored to high-fidelity mockup view
 def mis_dashboard(request):
-    # Total Pledges value + Delivered stats
-    meals_served_count = 14250 + Delivery.objects.filter(delivery_status='assigned').count()
+    return render(request, 'dashboard.html')
+
+def active_kitchens(request):
+    kitchens = Kitchen.objects.all()
+    data = []
+    for k in kitchens:
+        data.append({
+            'name': f"MerryMeal Kitchen - {k.user.first_name}",
+            'address': k.address,
+            'latitude': float(k.latitude) if k.latitude else 0.0,
+            'longitude': float(k.longitude) if k.longitude else 0.0,
+        })
     
-    active_seniors_count = Member.objects.filter(status='active').count()
-    if active_seniors_count == 0: active_seniors_count = 1240
-    
-    active_riders_count = Volunteer.objects.filter(status='active').count()
-    if active_riders_count == 0: active_riders_count = 42
-    
-    kitchens_count = Kitchen.objects.count()
-    if kitchens_count == 0: kitchens_count = 8
-    
-    context = {
-        'meals_served': meals_served_count,
-        'active_seniors': active_seniors_count,
-        'active_riders': active_riders_count,
-        'kitchens': kitchens_count
-    }
-    return render(request, 'dashboard.html', context)
+    # If no real kitchens are registered in MySQL yet, seed/return our 3 mock Bangkok pilot kitchens
+    if not data:
+        data = [
+            {
+                'name': 'MerryMeal Hub - Bangkapi (Central)',
+                'address': 'The Mall Bangkapi, Lat Phrao Rd, Bangkok',
+                'latitude': 13.7650,
+                'longitude': 100.6430
+            },
+            {
+                'name': 'MerryMeal Hub - Chatuchak (North)',
+                'address': 'Central Ladprao, Phahonyothin Rd, Bangkok',
+                'latitude': 13.8030,
+                'longitude': 100.5530
+            },
+            {
+                'name': 'MerryMeal Hub - Sukhumvit (South)',
+                'address': 'Asok Intersection, Sukhumvit Rd, Bangkok',
+                'latitude': 13.7360,
+                'longitude': 100.5600
+            }
+        ]
+    return JsonResponse({'status': 'success', 'kitchens': data})
+
+from django.views.decorators.csrf import csrf_exempt
+import json
+
+@csrf_exempt
+def approve_simulated_email(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            data = request.POST
+        
+        name = data.get('name', 'Anonymous Member')
+        email = data.get('email', '')
+        username = data.get('username', '')
+        
+        if email:
+            try:
+                html_message = f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                </head>
+                <body style="font-family: sans-serif; color: #333333; margin: 0; padding: 20px;">
+                    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <span style="font-size: 24px; font-weight: bold; color: #0284c7;">✨ MerryMeal Onboarding</span>
+                        </div>
+                        <h2 style="color: #0f172a; margin-top: 0;">Hello {name},</h2>
+                        <p style="font-size: 16px; line-height: 1.6; color: #475569;">
+                            We are pleased to inform you that your application for the <strong>MerryMeal Senior Nutrition Program</strong> has been approved by our staff!
+                        </p>
+                        <p style="font-size: 16px; line-height: 1.6; color: #475569;">
+                            You can now log in to your dashboard to manage your meals, schedule caregiver links, and track deliveries.
+                        </p>
+                        
+                        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px; margin: 20px 0;">
+                            <h4 style="margin-top: 0; margin-bottom: 10px; color: #0f172a; font-weight: bold;">Your Secure Portal Credentials:</h4>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 15px;">
+                                <tr>
+                                    <td style="padding: 4px 0; color: #64748b; width: 100px;">Username:</td>
+                                    <td style="padding: 4px 0; font-weight: bold; color: #0f172a;">{username}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 4px 0; color: #64748b;">Password:</td>
+                                    <td style="padding: 4px 0; font-weight: bold; color: #0f172a;">MerryMeal123!</td>
+                                </tr>
+                            </table>
+                        </div>
+                        
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="http://127.0.0.1:8000/login/" style="display: inline-block; background-color: #0284c7; color: #ffffff; padding: 14px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(2, 132, 199, 0.2); transition: background-color 0.2s ease;">
+                                Login to Dashboard
+                            </a>
+                        </div>
+                        
+                        <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+                        <p style="font-size: 12px; color: #94a3b8; text-align: center; margin-bottom: 0;">
+                            MerryMeal Senior Nutrition Program &copy; 2026. All rights reserved.
+                        </p>
+                    </div>
+                </body>
+                </html>
+                """
+                
+                plain_message = f"Hello {name},\n\nWe are pleased to inform you that your application for the MerryMeal Senior Nutrition Program has been approved by our staff!\n\nYou can now log in to your dashboard to manage your meals, schedule caregiver links, and track deliveries.\n\nYour secure portal credentials are:\n👉 Username: {username}\n👉 Temporary Password: MerryMeal123!\n\nPlease log in here: http://127.0.0.1:8000/login/\n\nWarm regards,\nMerryMeal Operations Desk"
+                
+                send_mail(
+                    subject="MerryMeal Onboarding - Account Approved!",
+                    message=plain_message,
+                    from_email="onboarding@merrymeal.org",
+                    recipient_list=[email],
+                    html_message=html_message,
+                    fail_silently=True
+                )
+                print(f"[ONBOARDING MAIL SERVICE] Simulated credentials email successfully dispatched to {email}")
+            except Exception as e:
+                print(f"Error sending simulated approval email: {e}")
+                
+        return JsonResponse({'status': 'success', 'message': 'Simulated review approved, credentials email dispatched.'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})

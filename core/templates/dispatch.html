@@ -27,10 +27,6 @@
                     <h3 class="fw-bold fs-4 mb-3 text-primary"><i class="bi bi-hourglass-split me-2 text-accent"></i>Unallocated Delivery Queue</h3>
                     <p class="text-muted small mb-4">Real-time coordinates mapped via Haversine geometry formulas. Click assign or allocate automatically.</p>
                     
-                    <div id="csrf-token-holder" class="d-none">
-                        {% csrf_token %}
-                    </div>
-
                     <div class="table-responsive">
                         <table class="table table-hover align-middle small mb-0" id="deliveryQueue">
                             <thead>
@@ -43,25 +39,27 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for deliv in deliveries %}
-                                <tr id="row-{{ deliv.id }}">
-                                    <td><strong>{{ deliv.member.user.first_name }}</strong></td>
-                                    <td>{{ deliv.member.address }}</td>
-                                    <td><span class="fw-bold {% if deliv.distance_km < 10.00 %}text-success{% else %}text-danger{% endif %}">{{ deliv.distance_km }} km</span></td>
-                                    <td>
-                                        {% if deliv.distance_km < 10.00 %}
-                                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">Hot Plate</span>
-                                        {% else %}
-                                        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1">Frozen Bundle</span>
-                                        {% endif %}
-                                    </td>
-                                    <td><button onclick="allocateSingle('{{ deliv.id }}', 'row-{{ deliv.id }}')" class="btn btn-outline-premium btn-sm py-1 px-3">Assign Courier</button></td>
+                                <tr id="row-1">
+                                    <td><strong>#MEM-890</strong></td>
+                                    <td>120 Elm St</td>
+                                    <td><span class="fw-bold text-success">3.4 km</span></td>
+                                    <td><span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">Hot Plate</span></td>
+                                    <td><button onclick="allocateSingle('row-1')" class="btn btn-outline-premium btn-sm py-1 px-3">Assign Courier</button></td>
                                 </tr>
-                                {% empty %}
-                                <tr id="empty-queue-row">
-                                    <td colspan="5" class="text-center text-muted p-4"><i class="bi bi-check-circle-fill text-success fs-3 d-block mb-2"></i>All routes successfully sequenced and dispatched!</td>
+                                <tr id="row-2">
+                                    <td><strong>#MEM-412</strong></td>
+                                    <td>45 Forest Rd</td>
+                                    <td><span class="fw-bold text-danger">12.1 km</span></td>
+                                    <td><span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1">Frozen Bundle</span></td>
+                                    <td><button onclick="allocateSingle('row-2')" class="btn btn-outline-premium btn-sm py-1 px-3">Assign Courier</button></td>
                                 </tr>
-                                {% endfor %}
+                                <tr id="row-3">
+                                    <td><strong>#MEM-551</strong></td>
+                                    <td>88 Oak Blvd</td>
+                                    <td><span class="fw-bold text-success">8.7 km</span></td>
+                                    <td><span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">Hot Plate</span></td>
+                                    <td><button onclick="allocateSingle('row-3')" class="btn btn-outline-premium btn-sm py-1 px-3">Assign Courier</button></td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -144,80 +142,33 @@
     </div>
 </section>
 
-<!-- Auto Sequence & Allocations JS with MySQL Integration -->
+<!-- Auto Sequence & Allocations Simulated JS -->
 <script>
-async function allocateSingle(deliveryId, rowId) {
+function allocateSingle(rowId) {
     const row = document.getElementById(rowId);
-    const csrfToken = document.querySelector('#csrf-token-holder [name=csrfmiddlewaretoken]').value;
-    
     row.style.transition = "opacity 0.5s ease";
     row.style.opacity = "0.3";
-    
-    try {
-        const formData = new FormData();
-        formData.append('delivery_id', deliveryId);
-        
-        const response = await fetch('{% url "allocate_route" %}', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-        const data = await response.json();
-        
-        if (data.status === 'success') {
-            row.remove();
-            alert('Route Allocated Successfully to On-Duty Courier and Saved in MySQL!');
-            checkQueueEmpty();
-        } else {
-            row.style.opacity = "1";
-            alert('Failed to allocate route: ' + data.message);
-        }
-    } catch (e) {
-        console.error("Error allocating route:", e);
-        row.style.opacity = "1";
-        alert('Connection error: could not allocate route in MySQL.');
-    }
+    setTimeout(() => {
+        row.remove();
+        alert('Route Allocated Successfully to On-Duty Courier!');
+        checkQueueEmpty();
+    }, 500);
 }
 
-async function autoSequenceRoutes() {
+function autoSequenceRoutes() {
     const queue = document.getElementById('deliveryQueue').getElementsByTagName('tbody')[0];
-    const csrfToken = document.querySelector('#csrf-token-holder [name=csrfmiddlewaretoken]').value;
-    
     queue.style.transition = "opacity 0.8s ease";
     queue.style.opacity = "0.2";
-    
-    try {
-        const response = await fetch('{% url "allocate_route" %}', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-        const data = await response.json();
-        
-        if (data.status === 'success') {
-            queue.innerHTML = `<tr><td colspan="5" class="text-center text-muted p-4"><i class="bi bi-check-circle-fill text-success fs-3 d-block mb-2"></i>All routes successfully sequenced and dispatched!</td></tr>`;
-            queue.style.opacity = "1";
-            alert('Auto-Haversine GIS allocation complete! All pending dispatch routes marked as assigned in MySQL.');
-        } else {
-            queue.style.opacity = "1";
-            alert('Failed to auto-sequence routes: ' + data.message);
-        }
-    } catch (e) {
-        console.error("Error auto-sequencing:", e);
+    setTimeout(() => {
+        queue.innerHTML = `<tr><td colspan="5" class="text-center text-muted p-4"><i class="bi bi-check-circle-fill text-success fs-3 d-block mb-2"></i>All routes successfully sequenced and dispatched!</td></tr>`;
         queue.style.opacity = "1";
-        alert('Connection error: could not auto-sequence routes in MySQL.');
-    }
+        alert('Auto-Haversine GIS allocation complete! All dispatch queues empty.');
+    }, 1000);
 }
 
 function checkQueueEmpty() {
     const queue = document.getElementById('deliveryQueue').getElementsByTagName('tbody')[0];
-    // Check if queue only contains an empty-queue-row or is empty
-    if (queue.rows.length === 0 || (queue.rows.length === 1 && queue.rows[0].id === 'empty-queue-row')) {
+    if (queue.rows.length === 0) {
         queue.innerHTML = `<tr><td colspan="5" class="text-center text-muted p-4"><i class="bi bi-check-circle-fill text-success fs-3 d-block mb-2"></i>All routes successfully sequenced and dispatched!</td></tr>`;
     }
 }

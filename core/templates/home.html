@@ -13,7 +13,7 @@
                 <h1 class="hero-title" id="hero-title">Nourishing Lives, <span>Delivering Care</span> to Every Home</h1>
                 <p class="hero-desc">We coordinate with local kitchens and volunteer riders to prepare and deliver hot, medically tailored noon meals Monday through Friday to qualified seniors and homebound adults.</p>
                 <div class="d-flex flex-wrap gap-3 justify-content-center justify-content-lg-start">
-                    <a href="{% url 'register' %}" class="btn btn-premium px-5 py-3 fs-5" id="hero-btn-join">Get Meals Delivered</a>
+                    <a href="javascript:void(0)" onclick="openRegistrationDrawer('member')" class="btn btn-premium px-5 py-3 fs-5" id="hero-btn-join">Get Meals Delivered</a>
                     <a href="#onboarding-roles" class="btn btn-outline-premium px-4 py-3 fs-5" id="hero-btn-info">Explore Our Roles</a>
                 </div>
             </div>
@@ -68,7 +68,7 @@
                         <h3 class="fw-bold fs-4 mb-2">Senior Member</h3>
                         <p class="text-muted small">Register to receive nutritional hot meals delivered directly to your door, fully aligned with your allergens and medical diet prescriptions.</p>
                     </div>
-                    <a href="{% url 'register' %}?role=member" class="btn btn-premium w-100 mt-4" id="role-btn-member">Apply for Meals</a>
+                    <a href="javascript:void(0)" onclick="openRegistrationDrawer('member')" class="btn btn-premium w-100 mt-4" id="role-btn-member">Apply for Meals</a>
                 </div>
             </div>
 
@@ -82,7 +82,7 @@
                         <h3 class="fw-bold fs-4 mb-2">Family Caregiver</h3>
                         <p class="text-muted small">Register to link profile dependencies, monitor food specifications, coordinate schedules, and verify real-time rider drop-offs.</p>
                     </div>
-                    <a href="{% url 'register' %}?role=caregiver" class="btn btn-premium w-100 mt-4" id="role-btn-caregiver">Manage Care</a>
+                    <a href="javascript:void(0)" onclick="openRegistrationDrawer('caregiver')" class="btn btn-premium w-100 mt-4" id="role-btn-caregiver">Manage Care</a>
                 </div>
             </div>
 
@@ -96,7 +96,7 @@
                         <h3 class="fw-bold fs-4 mb-2">Volunteer Rider</h3>
                         <p class="text-muted small">Help us deliver noon meals and conduct safety checks. Specify vehicle parameters and your preferred geofence boundaries.</p>
                     </div>
-                    <a href="{% url 'register' %}?role=volunteer" class="btn btn-premium w-100 mt-4" id="role-btn-volunteer">Register to Drive</a>
+                    <a href="javascript:void(0)" onclick="openRegistrationDrawer('volunteer')" class="btn btn-premium w-100 mt-4" id="role-btn-volunteer">Register to Drive</a>
                 </div>
             </div>
 
@@ -110,7 +110,7 @@
                         <h3 class="fw-bold fs-4 mb-2">Kitchen Partner</h3>
                         <p class="text-muted small">Register your commercial kitchen facility to cook meals based on regional scheduled quotas and log critical safety metrics.</p>
                     </div>
-                    <a href="{% url 'register' %}?role=partner" class="btn btn-premium w-100 mt-4" id="role-btn-partner">Register Facility</a>
+                    <a href="javascript:void(0)" onclick="openRegistrationDrawer('kitchen')" class="btn btn-premium w-100 mt-4" id="role-btn-partner">Register Facility</a>
                 </div>
             </div>
 
@@ -150,4 +150,2285 @@
         </div>
     </div>
 </section>
+
+<!-- Leaflet Maps CSS & JS CDN Dependencies -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<!-- Premium Onboarding Drawer Styles -->
+<style>
+    /* Sliding side drawer core overlays */
+    .registration-drawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        max-width: 580px;
+        background: rgba(255, 255, 255, 0.99);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        box-shadow: -10px 0 40px rgba(15, 23, 42, 0.15);
+        z-index: 1050;
+        transform: translateX(100%);
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow-y: auto;
+        border-left: 1px solid rgba(0, 0, 0, 0.08);
+        padding: 30px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .registration-drawer.open {
+        transform: translateX(0);
+    }
+    
+    .drawer-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 23, 42, 0.4);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+        z-index: 1040;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.35s ease;
+    }
+    
+    .drawer-backdrop.show {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .form-step {
+        display: none;
+    }
+    
+    .form-step.active {
+        display: block;
+        animation: drawerStepReveal 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+    }
+    
+    @keyframes drawerStepReveal {
+        from {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Premium Real-Time Validation CSS */
+    .validation-message {
+        font-size: 0.82rem;
+        font-weight: 500;
+        margin-top: 5px;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .validation-message.error {
+        color: var(--color-danger, #ef4444);
+    }
+    
+    .validation-message.success {
+        color: var(--color-success, #10b981);
+    }
+    
+    .form-control.is-invalid, .form-select.is-invalid {
+        border: 1.5px solid #ef4444 !important;
+        background-color: rgba(239, 68, 68, 0.02) !important;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+    }
+    
+    .form-control.is-valid, .form-select.is-valid {
+        border: 1.5px solid #10b981 !important;
+        background-color: rgba(16, 185, 129, 0.02) !important;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
+    }
+    
+    .shake-input {
+        animation: shakeInputAnim 0.4s ease-in-out;
+    }
+    
+    @keyframes shakeInputAnim {
+        0%, 100% { transform: translateX(0); }
+        20%, 60% { transform: translateX(-6px); }
+        40%, 80% { transform: translateX(6px); }
+    }
+
+    /* High contrast premium styling for GIS status cards */
+    .gis-status-hot-meals {
+        background-color: #ecfdf5 !important;
+        border: 1.5px solid #10b981 !important;
+        color: #065f46 !important;
+    }
+    .gis-status-hot-meals .text-success, .gis-status-hot-meals h5, .gis-status-hot-meals strong {
+        color: #047857 !important;
+    }
+    .gis-status-hot-meals i {
+        color: #10b981 !important;
+    }
+    
+    .gis-status-weekend-packs {
+        background-color: #fffbeb !important;
+        border: 1.5px solid #f59e0b !important;
+        color: #92400e !important;
+    }
+    .gis-status-weekend-packs .text-warning, .gis-status-weekend-packs h5, .gis-status-weekend-packs strong {
+        color: #d97706 !important;
+    }
+    .gis-status-weekend-packs i {
+        color: #f59e0b !important;
+    }
+    
+    .gis-status-waitlist {
+        background-color: #fff1f2 !important;
+        border: 1.5px solid #f43f5e !important;
+        color: #9f1239 !important;
+    }
+    .gis-status-waitlist .text-danger, .gis-status-waitlist h5, .gis-status-waitlist strong {
+        color: #e11d48 !important;
+    }
+    .gis-status-waitlist i {
+        color: #f43f5e !important;
+    }
+
+    /* Password Strength Checklist Widget */
+    .password-strength-container {
+        background: #f8fafc;
+        border-radius: 12px;
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        padding: 16px;
+        margin-top: 10px;
+        transition: all 0.3s ease;
+    }
+    
+    .password-strength-bar-bg {
+        height: 6px;
+        background: #e2e8f0;
+        border-radius: 3px;
+        overflow: hidden;
+        margin-bottom: 12px;
+    }
+    
+    .password-strength-bar {
+        height: 100%;
+        width: 0%;
+        background: #ef4444;
+        border-radius: 3px;
+        transition: width 0.3s ease, background-color 0.3s ease;
+    }
+    
+    .password-checklist {
+        list-style: none;
+        padding-left: 0;
+        margin-bottom: 0;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px 16px;
+    }
+    
+    @media (max-width: 576px) {
+        .password-checklist {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .password-checklist-item {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: color 0.3s ease;
+    }
+    
+    .password-checklist-item i {
+        font-size: 0.95rem;
+        transition: transform 0.2s ease;
+    }
+    
+    .password-checklist-item.valid {
+        color: #10b981;
+    }
+    
+    .password-checklist-item.valid i {
+        transform: scale(1.15);
+    }
+
+    /* Floating badges & micro-animations */
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-8px); }
+    }
+    
+    @keyframes bounceCustom {
+        0%, 100% { transform: translateY(0) scale(1); }
+        50% { transform: translateY(-4px) scale(1.05); }
+    }
+    
+    @keyframes pulseCustom {
+        0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+        70% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+    }
+    
+    .animate-float {
+        animation: float 5s ease-in-out infinite;
+    }
+    
+    .animate-bounce-custom {
+        animation: bounceCustom 3.5s ease-in-out infinite;
+    }
+    
+    .animate-pulse-custom {
+        animation: pulseCustom 2.2s infinite;
+    }
+    
+    .premium-hover-image {
+        transition: all 0.4s ease;
+    }
+    .premium-hover-image:hover {
+        transform: scale(1.05) rotate(1deg);
+    }
+
+    /* Onboarding timeline inside Success Status Hub */
+    .timeline-bar {
+        position: relative;
+        padding-left: 36px;
+    }
+    
+    .timeline-bar::before {
+        content: '';
+        position: absolute;
+        left: 15px;
+        top: 8px;
+        bottom: 8px;
+        width: 2px;
+        background: rgba(226, 232, 240, 0.8);
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 24px;
+    }
+    
+    .timeline-badge {
+        position: absolute;
+        left: -31px;
+        top: 0;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #e2e8f0;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+        font-weight: 700;
+        border: 3.5px solid #ffffff;
+        box-shadow: 0 0 0 1px rgba(226, 232, 240, 0.5);
+        transition: all 0.3s ease;
+    }
+    
+    .timeline-item.active .timeline-badge {
+        background: #4f46e5;
+        color: #ffffff;
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
+    }
+    
+    .timeline-item.success .timeline-badge {
+        background: #10b981;
+        color: #ffffff;
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+    }
+    
+    .timeline-content {
+        padding-top: 3px;
+    }
+
+    /* Toast Overlay styling */
+    #toast-container {
+        position: fixed;
+        top: 24px;
+        right: 24px;
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 380px;
+        max-width: calc(100vw - 48px);
+        pointer-events: none;
+    }
+    
+    .custom-toast {
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        pointer-events: auto;
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        opacity: 0;
+        transform: translateX(100%);
+        transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .custom-toast.show {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    
+    .custom-toast.hide {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+
+    .custom-toast::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+    }
+    
+    .custom-toast-success::before { background-color: #10b981; }
+    .custom-toast-error::before { background-color: #ef4444; }
+    .custom-toast-warning::before { background-color: #f59e0b; }
+    .custom-toast-info::before { background-color: #4f46e5; }
+
+    .custom-toast-icon {
+        font-size: 1.25rem;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+    
+    .custom-toast-success .custom-toast-icon { color: #10b981; }
+    .custom-toast-error .custom-toast-icon { color: #ef4444; }
+    .custom-toast-warning .custom-toast-icon { color: #f59e0b; }
+    .custom-toast-info .custom-toast-icon { color: #4f46e5; }
+    
+    .custom-toast-content {
+        flex-grow: 1;
+    }
+    
+    .custom-toast-title {
+        font-family: 'Outfit', sans-serif;
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: #1e293b;
+        margin-bottom: 4px;
+    }
+    
+    .custom-toast-message {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.85rem;
+        color: #64748b;
+        line-height: 1.4;
+    }
+    
+    .custom-toast-close {
+        background: none;
+        border: none;
+        color: #94a3b8;
+        cursor: pointer;
+        padding: 0;
+        font-size: 1rem;
+        line-height: 1;
+        transition: color 0.2s;
+    }
+    
+    .custom-toast-close:hover {
+        color: #475569;
+    }
+</style>
+
+<!-- Background backdrop and registration drawer drawer wrapper -->
+<div id="drawer-backdrop" class="drawer-backdrop" onclick="closeRegistrationDrawer()"></div>
+
+<div id="registration-drawer" class="registration-drawer">
+    <!-- Header with dismiss control -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 id="drawer-main-title" class="fw-extrabold text-primary mb-0" style="font-family: 'Outfit', sans-serif;"><i class="bi bi-heart-pulse-fill text-danger me-2"></i>Member Intake Onboarding</h4>
+        <button type="button" class="btn-close fs-5" aria-label="Close Onboarding Drawer" onclick="closeRegistrationDrawer()"></button>
+    </div>
+
+    <!-- Active Onboarding Role Dropdown Selector -->
+    <div class="mb-4">
+        <label for="drawerRoleSelector" class="form-label fw-bold small text-primary mb-1"><i class="bi bi-person-badge-fill me-1"></i>Active Access Portal</label>
+        <select id="drawerRoleSelector" class="form-select bg-light border-0 fw-bold text-primary" onchange="switchDrawerRole(this.value)" style="border-radius: 12px; padding: 10px 15px; font-family: 'Outfit', sans-serif; cursor: pointer;">
+            <option value="member" selected>Senior Member Intake Onboarding</option>
+            <option value="caregiver">Caregiver Satellite Portal</option>
+            <option value="volunteer">Volunteer Specialist Directory</option>
+            <option value="kitchen">Kitchen Partner Operations</option>
+            <option value="donor">Donor & Sponsor Pledging</option>
+            <option value="coordinator">Operations Coordinator Desk</option>
+            <option value="admin">System Executive Admin</option>
+        </select>
+    </div>
+
+    <!-- UI Image showcase banner with micro-animations - Dark contrast layout -->
+    <div id="drawer-showcase-card" class="position-relative overflow-hidden rounded-4 mb-4 text-white shadow-sm p-4 animate-fade-in" style="background: linear-gradient(135deg, #09090b 0%, #1e1b4b 60%, #311042 100%); min-height: 170px;">
+        <!-- Deep gradient backdrop with perfect text contrast -->
+        
+        <div class="row align-items-center position-relative z-1 h-100 g-0">
+            <div class="col-8 pe-2">
+                <span id="drawer-showcase-badge" class="badge bg-white bg-opacity-25 text-white rounded-pill px-2.5 py-1 mb-2 fw-semibold animate-pulse-custom" style="font-size: 0.75rem; backdrop-filter: blur(5px); text-shadow: 0 1px 2px rgba(0,0,0,0.35);">
+                    ✨ Pilot Program Active
+                </span>
+                <h5 id="drawer-showcase-title" class="fw-extrabold mb-1 text-white" style="font-family: 'Outfit', sans-serif; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);">Intake Portal</h5>
+                <p id="drawer-showcase-desc" class="text-white mb-0 small fw-semibold" style="font-size: 0.75rem; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45); line-height: 1.35;">Nourishing hot meals delivered Monday through Friday to qualified homebound seniors.</p>
+            </div>
+            <div class="col-4 text-center">
+                <div class="position-relative d-inline-block">
+                    <img id="drawer-showcase-img" src="/static/images/hero_senior_delivery.png" class="img-fluid rounded-3 shadow animate-float premium-hover-image" alt="Senior Onboarding" style="max-height: 90px; object-fit: cover; width: 100px;">
+                    <span id="drawer-showcase-img-badge-span" class="position-absolute translate-middle badge rounded-pill bg-success p-1 shadow border border-white animate-bounce-custom" style="top: 10%; left: 10%; font-size: 0.6rem;">
+                        <i id="drawer-showcase-img-badge" class="bi bi-shield-fill-check text-white"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div    <!-- TAB 1: Member Panel Container -->
+    <div id="drawer-panel-member" class="drawer-panel active">
+        <!-- Multi-step Form Progress Indicator -->
+        <div id="drawer-indicators-container">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small fw-bold text-primary" id="step-indicator" style="font-family: 'Outfit', sans-serif;">Step 1 of 4: Personal Profile</span>
+                <span class="badge bg-primary" id="progress-percent">25%</span>
+            </div>
+            <div class="progress rounded-pill mb-4" style="height: 6px;">
+                <div class="progress-bar bg-primary rounded-pill transition-smooth" id="form-progress" role="progressbar" style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+        </div>
+
+        <!-- Onboarding Form -->
+        <form id="form-member-multistep" method="POST" action="{% url 'register' %}">
+            {% csrf_token %}
+            <input type="hidden" name="role" value="member">
+            <input type="hidden" name="memberLatitude" id="memberLatitude">
+            <input type="hidden" name="memberLongitude" id="memberLongitude">
+
+            <!-- Step 1: Personal Profile details -->
+            <div class="form-step active" id="step-1">
+                <h3 class="fw-bold fs-5 mb-2 text-primary" style="font-family: 'Outfit', sans-serif;"><i class="bi bi-person-circle me-2"></i>Personal Profile</h3>
+                <p class="text-muted small mb-3">Provide basic personal information and contact credentials to build your dashboard profile.</p>
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="memberName" class="form-label fw-bold small mb-1">Full Name</label>
+                        <input type="text" class="form-control bg-light border-0" id="memberName" name="memberName" placeholder="e.g. Robert Smith" required autocomplete="name">
+                        <div class="validation-message error d-none" id="memberName-error"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="memberPhone" class="form-label fw-bold small mb-1">Contact Phone</label>
+                        <input type="tel" class="form-control bg-light border-0" id="memberPhone" name="memberPhone" placeholder="e.g. 555-0199" required autocomplete="tel">
+                        <div class="validation-message error d-none" id="memberPhone-error"></div>
+                    </div>
+                    <div class="col-12">
+                        <label for="memberEmail" class="form-label fw-bold small mb-1">Email Address</label>
+                        <input type="email" class="form-control bg-light border-0" id="memberEmail" name="memberEmail" placeholder="e.g. robert@example.com" required autocomplete="email">
+                        <div class="validation-message error d-none" id="memberEmail-error"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="memberPassword" class="form-label fw-bold small mb-1">Choose Password</label>
+                        <input type="password" class="form-control bg-light border-0" id="memberPassword" name="memberPassword" placeholder="Minimum 8 characters" required autocomplete="new-password">
+                        <div class="validation-message error d-none" id="memberPassword-error"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="memberConfirmPassword" class="form-label fw-bold small mb-1">Confirm Password</label>
+                        <input type="password" class="form-control bg-light border-0" id="memberConfirmPassword" placeholder="Re-enter secure password" required autocomplete="new-password">
+                        <div class="validation-message error d-none" id="memberConfirmPassword-error"></div>
+                    </div>
+                    <div class="col-12">
+                        <!-- Real-time Password Strength Widget -->
+                        <div class="password-strength-container d-none" id="password-strength-widget">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="text-muted small fw-bold">Password Strength: <span id="password-strength-label" class="text-danger">Very Weak</span></span>
+                                <span class="text-muted small fw-bold" id="password-strength-percent">0%</span>
+                            </div>
+                            <div class="password-strength-bar-bg">
+                                <div class="password-strength-bar" id="password-strength-bar"></div>
+                            </div>
+                            <ul class="password-checklist">
+                                <li class="password-checklist-item" id="chk-length">
+                                    <i class="bi bi-x-circle-fill text-muted" id="icon-length"></i>At least 8 chars
+                                </li>
+                                <li class="password-checklist-item" id="chk-upper">
+                                    <i class="bi bi-x-circle-fill text-muted" id="icon-upper"></i>Uppercase letter
+                                </li>
+                                <li class="password-checklist-item" id="chk-lower">
+                                    <i class="bi bi-x-circle-fill text-muted" id="icon-lower"></i>Lowercase letter
+                                </li>
+                                <li class="password-checklist-item" id="chk-digit">
+                                    <i class="bi bi-x-circle-fill text-muted" id="icon-digit"></i>At least one digit
+                                </li>
+                                <li class="password-checklist-item" id="chk-special">
+                                    <i class="bi bi-x-circle-fill text-muted" id="icon-special"></i>Special symbol
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-12 d-flex justify-content-end mt-4">
+                        <button type="button" class="btn btn-premium px-5 py-2.5 rounded-pill" onclick="goToStep(2)">Next: Location Check <i class="bi bi-arrow-right ms-1"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Location and GIS Radius Math -->
+            <div class="form-step" id="step-2">
+                <h3 class="fw-bold fs-5 mb-2 text-primary" style="font-family: 'Outfit', sans-serif;"><i class="bi bi-geo-alt-fill me-2 text-danger"></i>Home Address & GIS Perimeter Check</h3>
+                <p class="text-muted small mb-3">We calculate the geofencing distance to our nearest hub kitchen to check if you qualify for hot daily deliveries.</p>
+                
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label for="memberAddress" class="form-label fw-bold small mb-1">Delivery Address</label>
+                        <div class="input-group shadow-sm rounded-3 overflow-hidden">
+                            <span class="input-group-text bg-light border-0"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" class="form-control bg-light border-0" id="memberAddress" name="memberAddress" placeholder="e.g. Asok Intersection, Sukhumvit Rd, Bangkok" required>
+                            <button class="btn btn-outline-premium border-0 bg-light-subtle px-3 fw-bold" type="button" id="btn-gps-detect" onclick="detectGPSLocation()" style="border-left: 1px solid rgba(0, 0, 0, 0.05) !important;">
+                                <i class="bi bi-geo-alt-fill text-danger me-1"></i> Use GPS Map
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 my-3">
+                        <button type="button" class="btn btn-outline-premium w-100 py-2.5 fw-bold rounded-pill" onclick="calculateGisDistance()">
+                            <i class="bi bi-calculator me-2"></i>Verify GIS Eligibility
+                        </button>
+                    </div>
+
+                    <!-- Dynamic GIS Success/Warning Cards -->
+                    <div class="col-12 d-none" id="gis-results-card">
+                        <div class="p-3 rounded-4 border shadow-sm" id="gis-alert-box">
+                            <div class="d-flex align-items-start gap-3">
+                                <div id="gis-icon-div" class="fs-2"></div>
+                                <div>
+                                    <h6 class="fw-bold mb-1" id="gis-header-text">Checking...</h6>
+                                    <p class="mb-0 text-muted small" id="gis-desc-text" style="font-size: 0.8rem;"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 d-flex justify-content-between mt-4">
+                        <button type="button" class="btn btn-outline-secondary px-4 py-2 rounded-pill" onclick="goToStep(1)"><i class="bi bi-arrow-left me-1"></i> Back</button>
+                        <button type="button" class="btn btn-premium px-5 py-2.5 rounded-pill" onclick="goToStep(3)">Next: Dietary Profile <i class="bi bi-arrow-right ms-1"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Medical Allergies & Dietary checklist (A11y selection) -->
+            <div class="form-step" id="step-3">
+                <h3 class="fw-bold fs-5 mb-2 text-primary" style="font-family: 'Outfit', sans-serif;"><i class="bi bi-heart-pulse-fill me-2 text-accent"></i>Health & Dietary Profile</h3>
+                <p class="text-muted small mb-3">Select pre-categorized medically tailored dietary guidelines or write specific prescriptions.</p>
+                
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label fw-bold small mb-2 d-block">Medically Prescribed Diets (Select all that apply)</label>
+                        <div class="row g-2">
+                            <div class="col-sm-6">
+                                <div class="form-check p-2.5 bg-light rounded-3 border border-light">
+                                    <input class="form-check-input ms-1 me-2" type="checkbox" name="dietary_needs" value="Low Sodium" id="diet-sodium">
+                                    <label class="form-check-label fw-semibold small" for="diet-sodium">Low Sodium / Heart Healthy</label>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-check p-2.5 bg-light rounded-3 border border-light">
+                                    <input class="form-check-input ms-1 me-2" type="checkbox" name="dietary_needs" value="Diabetic Friendly" id="diet-diabetic">
+                                    <label class="form-check-label fw-semibold small" for="diet-diabetic">Diabetic Friendly (Low Sugar)</label>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-check p-2.5 bg-light rounded-3 border border-light">
+                                    <input class="form-check-input ms-1 me-2" type="checkbox" name="dietary_needs" value="Renal Support" id="diet-renal">
+                                    <label class="form-check-label fw-semibold small" for="diet-renal">Renal Support (Low Potassium)</label>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-check p-2.5 bg-light rounded-3 border border-light">
+                                    <input class="form-check-input ms-1 me-2" type="checkbox" name="dietary_needs" value="Pureed Food Only" id="diet-puree">
+                                    <label class="form-check-label fw-semibold small" for="diet-puree">Pureed Food / Easy Swallowing</label>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-check p-2.5 bg-light rounded-3 border border-light">
+                                    <input class="form-check-input ms-1 me-2" type="checkbox" name="dietary_needs" value="Vegetarian" id="diet-veg">
+                                    <label class="form-check-label fw-semibold small" for="diet-veg">Vegetarian</label>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-check p-2.5 bg-light rounded-3 border border-light">
+                                    <input class="form-check-input ms-1 me-2" type="checkbox" name="dietary_needs" value="Halal" id="diet-halal">
+                                    <label class="form-check-label fw-semibold small" for="diet-halal">Halal</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 mt-3">
+                        <label for="memberAllergies" class="form-label fw-bold small mb-1">Custom Allergies or Dietary Exclusions</label>
+                        <textarea class="form-control bg-light border-0" id="memberAllergies" name="memberAllergies" rows="2" placeholder="e.g. Peanuts, Seafood, low sodium prescription, soft food only"></textarea>
+                    </div>
+
+                    <div class="col-12 d-flex justify-content-between mt-4">
+                        <button type="button" class="btn btn-outline-secondary px-4 py-2 rounded-pill" onclick="goToStep(2)"><i class="bi bi-arrow-left me-1"></i> Back</button>
+                        <button type="button" class="btn btn-premium px-5 py-2.5 rounded-pill" onclick="goToStep(4)">Next: Caregiver Link <i class="bi bi-arrow-right ms-1"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Caregiver optional linkage -->
+            <div class="form-step" id="step-4">
+                <h3 class="fw-bold fs-5 mb-2 text-primary" style="font-family: 'Outfit', sans-serif;"><i class="bi bi-people-fill me-2"></i>Caregiver Connection (Optional)</h3>
+                <p class="text-muted small mb-3">Associate a family member, child, or professional caregiver to co-manage delivery timelines and feedback audits.</p>
+                
+                <div class="row g-3">
+                    <div class="col-12 mb-2">
+                        <label class="form-label fw-bold small d-block mb-2">Do you have a caregiver or relative to link?</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="hasCaregiver" id="cg-yes" value="yes" onclick="toggleCaregiverInputs(true)">
+                            <label class="btn btn-outline-premium py-2.5 small" for="cg-yes"><i class="bi bi-check-circle me-1"></i> Yes, link a caregiver</label>
+                            
+                            <input type="radio" class="btn-check" name="hasCaregiver" id="cg-no" value="no" checked onclick="toggleCaregiverInputs(false)">
+                            <label class="btn btn-outline-premium py-2.5 small" for="cg-no"><i class="bi bi-x-circle me-1"></i> No, register independently</label>
+                        </div>
+                    </div>
+
+                    <!-- Collapsible Caregiver inputs -->
+                    <div id="caregiver-fields" class="col-12 d-none">
+                        <div class="p-3 bg-light rounded-4 border border-light row g-3">
+                            <div class="col-12">
+                                <label for="caregiverName" class="form-label fw-bold small mb-1">Caregiver Name</label>
+                                <input type="text" class="form-control bg-white border" id="caregiverName" name="caregiverName">
+                                <div class="validation-message error d-none" id="caregiverName-error"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="caregiverPhone" class="form-label fw-bold small mb-1">Caregiver Phone</label>
+                                <input type="text" class="form-control bg-white border" id="caregiverPhone" name="caregiverPhone" placeholder="e.g. +66 81 234 5678">
+                                <div class="validation-message error d-none" id="caregiverPhone-error"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="caregiverEmail" class="form-label fw-bold small mb-1">Caregiver Email</label>
+                                <input type="email" class="form-control bg-white border" id="caregiverEmail" name="caregiverEmail" placeholder="e.g. caregiver@example.com">
+                                <div class="validation-message error d-none" id="caregiverEmail-error"></div>
+                            </div>
+                            <div class="col-12">
+                                <label for="caregiverRelation" class="form-label fw-bold small mb-1">Relationship to Member</label>
+                                <select class="form-select bg-white border" id="caregiverRelation" name="caregiverRelation">
+                                    <option value="spouse">Spouse</option>
+                                    <option value="child" selected>Child / Relative</option>
+                                    <option value="professional">Professional Social Worker / Caretaker</option>
+                                    <option value="neighbor">Neighbor</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hidden inputs to preserve split emergency name/phone compatibility in DB -->
+                    <input type="hidden" name="emergencyContact" id="emergencyContact">
+                    <input type="hidden" id="emergencyName" value="Intake Emergency Contact">
+                    <input type="hidden" id="emergencyRelation" value="other">
+                    <input type="hidden" id="emergencyPhone" value="000-0000">
+
+                    <div class="col-12 d-flex justify-content-between mt-4">
+                        <button type="button" class="btn btn-outline-secondary px-4 py-2 rounded-pill" onclick="goToStep(3)"><i class="bi bi-arrow-left me-1"></i> Back</button>
+                        <button type="submit" class="btn btn-premium px-5 py-2.5 rounded-pill fw-bold" id="btn-submit-member-multistep">
+                            Submit Intake Form
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <!-- Step 5 Success Hub & Operations Timeline (Replaces Form when saved in MySQL) -->
+        <div id="success-status-hub" class="d-none mt-2">
+            <div class="text-center p-4 bg-success bg-opacity-5 rounded-5 border border-success border-opacity-15 mb-4 animate-bounce-custom">
+                <div class="rounded-circle bg-success text-white d-inline-flex align-items-center justify-content-center mb-3 shadow" style="width: 60px; height: 60px; font-size: 1.8rem;">
+                    <i class="bi bi-check-lg"></i>
+                </div>
+                <h5 class="fw-extrabold text-success mb-2" style="font-family: 'Outfit', sans-serif;">Application Logged Successfully!</h5>
+                <p class="text-muted small mb-0" id="success-desc-msg" style="font-size: 0.8rem;"></p>
+            </div>
+
+            <h6 class="fw-bold mb-3 text-primary" style="font-family: 'Outfit', sans-serif;"><i class="bi bi-clock-history me-2"></i>Active Pipeline Milestones</h6>
+            
+            <div class="timeline-bar mb-4">
+                <!-- Timeline Item 1 -->
+                <div class="timeline-item success">
+                    <div class="timeline-badge"><i class="bi bi-database-check"></i></div>
+                    <div class="timeline-content">
+                        <h6 class="fw-bold mb-0 text-success small" style="font-family: 'Outfit', sans-serif;">Step 1: Application Profile Registered</h6>
+                        <p class="text-muted small mb-0" style="font-size: 0.78rem;">Custom Senior Member profile successfully registered inside secure database tables with standard validation checks.</p>
+                    </div>
+                </div>
+                <!-- Timeline Item 2 -->
+                <div class="timeline-item success">
+                    <div class="timeline-badge"><i class="bi bi-geo-alt-fill"></i></div>
+                    <div class="timeline-content">
+                        <h6 class="fw-bold mb-0 text-success small" style="font-family: 'Outfit', sans-serif;">Step 2: Geofencing Radius Verification</h6>
+                        <p class="text-muted small mb-0" id="timeline-gis-msg" style="font-size: 0.78rem;">Checked: Home coordinate is within active Bangkok kitchen hubs perimeters.</p>
+                    </div>
+                </div>
+                <!-- Timeline Item 3 -->
+                <div class="timeline-item active" id="timeline-eligibility-step">
+                    <div class="timeline-badge"><i class="bi bi-hourglass-split"></i></div>
+                    <div class="timeline-content">
+                        <h6 class="fw-bold mb-0 text-primary small" id="timeline-eligibility-title" style="font-family: 'Outfit', sans-serif;">Step 3: Coordinator Eligibility Review</h6>
+                        <p class="text-muted small mb-0" id="timeline-eligibility-desc" style="font-size: 0.78rem;">Pending manual audit by our Operations Desk staff.</p>
+                    </div>
+                </div>
+                <!-- Timeline Item 4 -->
+                <div class="timeline-item" id="timeline-credentials-step">
+                    <div class="timeline-badge"><i class="bi bi-envelope-check"></i></div>
+                    <div class="timeline-content">
+                        <h6 class="fw-bold mb-0 text-muted small" style="font-family: 'Outfit', sans-serif;">Step 4: Welcome Credentials Dispatched</h6>
+                        <p class="text-muted small mb-0" style="font-size: 0.78rem;">A welcome email containing your secure credentials will be sent upon coordinator approval.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Operations Simulator and Direct Login CTAs -->
+            <div id="simulation-approval-container" class="mt-4">
+                <button type="button" class="btn btn-outline-success w-100 py-3 rounded-pill fw-bold shadow-sm" id="btn-simulate-approval" onclick="simulateMemberApproval()">
+                    <i class="bi bi-shield-fill-check me-2"></i>Simulate Operations Approval
+                </button>
+            </div>
+
+            <div id="direct-login-container" class="mt-3 d-none">
+                <a href="{% url 'user_login' %}" class="btn btn-premium w-100 py-3 rounded-pill fw-bold text-white shadow-sm text-center d-block text-decoration-none">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Login to Dashboard
+                </a>
+            </div>
+
+            <button type="button" class="btn btn-outline-premium w-100 py-3 mt-4 rounded-pill fw-bold shadow-sm" onclick="resetOnboardingForm()">
+                <i class="bi bi-arrow-clockwise me-2"></i>Register Another Senior
+            </button>
+        </div>
+    </div>
+
+    <!-- TAB 2: Caregiver Panel Container -->
+    <div id="drawer-panel-caregiver" class="drawer-panel d-none animate-fade-in">
+        <span class="badge bg-warning bg-opacity-10 text-warning px-3 py-2 rounded-pill mb-2 fw-bold align-self-start"><i class="bi bi-lightbulb-fill me-1"></i>SATELLITE CARE FLOW</span>
+        <h3 class="fw-extrabold text-primary mb-3">Caregiver Dependency Linking</h3>
+        <p class="text-muted small mb-4">
+            We are brainstorming how caregivers and family members coordinate care schedules. In order to oversee food allocations, link profiles securely, and track rider locations in real-time, how should the secure validation system handle parent pairings?
+        </p>
+        <div class="p-3 bg-light rounded-4 border mb-4">
+            <h6 class="fw-bold mb-1 text-primary"><i class="bi bi-info-circle-fill me-2"></i>Current Operations Setup</h6>
+            <p class="text-muted small mb-0">Seamless contact matching: If a caregiver signs up with the phone/email provided during senior member registration, they link instantly.</p>
+        </div>
+        
+        <div class="p-4 bg-white rounded-5 border border-light shadow-sm">
+            <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-patch-question me-2"></i>Linkage Model Poll</h5>
+            <div class="d-flex flex-column gap-3">
+                <div class="poll-card" id="poll-drawer-cg-1" onclick="submitPoll('cg', 1, 'Seamless Contact-Matching')">
+                    <h6 class="fw-bold mb-1">Option 1: Contact-Matching (Recommended)</h6>
+                    <p class="text-muted small mb-0">System automatically matches phone numbers. Easy for elderly members.</p>
+                </div>
+                <div class="poll-card" id="poll-drawer-cg-2" onclick="submitPoll('cg', 2, 'Security Token Key Exchange')">
+                    <h6 class="fw-bold mb-1">Option 2: Caregiver Security Key</h6>
+                    <p class="text-muted small mb-0">Senior generates a 6-digit access code for the caregiver to enter on sign-up.</p>
+                </div>
+                <div class="poll-card" id="poll-drawer-cg-3" onclick="submitPoll('cg', 3, 'Manual Coordinator Vetting')">
+                    <h6 class="fw-bold mb-1">Option 3: Manual Operations Verification</h6>
+                    <p class="text-muted small mb-0">Operations team manually audits relationship credentials before granting access.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: Volunteer Panel Container -->
+    <div id="drawer-panel-volunteer" class="drawer-panel d-none animate-fade-in">
+        <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill mb-2 fw-bold align-self-start"><i class="bi bi-shield-check me-1"></i>CONSOLIDATED SKILL-BASED</span>
+        <h3 class="fw-extrabold text-primary mb-3">Unified Skill-Based Volunteering</h3>
+        <p class="text-muted small mb-3">
+            Volunteers register under a single streamlined portal and select their professional skill-set. The system customizes their workspace to match their expertise.
+        </p>
+        
+        <!-- Skill-Selection radio cards that update the mock dashboard -->
+        <div class="d-flex flex-column gap-2 mb-4">
+            <label class="form-label fw-bold text-primary mb-2">Select a Specialization to preview its customized workspace:</label>
+            
+            <div class="p-3 bg-light rounded-4 border cursor-pointer transition-smooth" id="skill-btn-drawer-rider" onclick="selectSkillDrawer('rider')" style="border-width: 2px !important; border-color: var(--bs-primary) !important;">
+                <div class="d-flex align-items-center gap-2">
+                    <input class="form-check-input" type="radio" name="skill_select_drawer" id="skill-drawer-rider" checked>
+                    <label class="form-check-label fw-bold mb-0 text-primary" for="skill-drawer-rider">
+                        <i class="bi bi-bicycle me-1"></i> Rider / Courier
+                    </label>
+                </div>
+                <p class="text-muted small mb-0 ms-4 mt-1">Delivers hot portion routes and updates wellness checks.</p>
+            </div>
+
+            <div class="p-3 bg-light rounded-4 border cursor-pointer transition-smooth" id="skill-btn-drawer-dietitian" onclick="selectSkillDrawer('dietitian')">
+                <div class="d-flex align-items-center gap-2">
+                    <input class="form-check-input" type="radio" name="skill_select_drawer" id="skill-drawer-dietitian">
+                    <label class="form-check-label fw-bold mb-0 text-primary" for="skill-drawer-dietitian">
+                        <i class="bi bi-egg-fried me-1"></i> Clinical Dietitian / Nutritionist
+                    </label>
+                </div>
+                <p class="text-muted small mb-0 ms-4 mt-1">Audits allergens, approves menus, and certifies food codes.</p>
+            </div>
+
+            <div class="p-3 bg-light rounded-4 border cursor-pointer transition-smooth" id="skill-btn-drawer-social" onclick="selectSkillDrawer('social')">
+                <div class="d-flex align-items-center gap-2">
+                    <input class="form-check-input" type="radio" name="skill_select_drawer" id="skill-drawer-social">
+                    <label class="form-check-label fw-bold mb-0 text-primary" for="skill-drawer-social">
+                        <i class="bi bi-chat-square-heart-fill me-1"></i> Social Worker / Welfare Responder
+                    </label>
+                </div>
+                <p class="text-muted small mb-0 ms-4 mt-1">Receives dynamic feedback triggers and handles reassessments.</p>
+            </div>
+        </div>
+
+        <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-display me-2 text-accent"></i>Workspace Utility Preview</h5>
+        
+        <!-- Dynamic Mock Dashboard Display -->
+        <div class="mock-db-preview p-3 rounded-4 bg-dark text-white shadow mb-3" id="mock-db-canvas-drawer" style="font-family: monospace; font-size: 0.85rem;">
+            <!-- Default Rider Preview -->
+            <div id="mock-preview-drawer-rider">
+                <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-2 mb-3">
+                    <span class="fw-bold text-success"><i class="bi bi-map me-1"></i>Courier Route Sheet</span>
+                    <span class="badge bg-success">3 Pending Stops</span>
+                </div>
+                <div class="p-2 mb-2 bg-secondary bg-opacity-25 rounded border border-secondary small">
+                    <strong>Stop #1: Robert S.</strong> - 120 Elm St (<span class="text-warning fw-bold">4.2km</span>) <span class="badge bg-dark">Low-Sodium</span>
+                </div>
+                <div class="p-2 mb-2 bg-secondary bg-opacity-25 rounded border border-secondary small">
+                    <strong>Stop #2: Mary K.</strong> - 45 Forest Rd (<span class="text-warning fw-bold">9.1km</span>) <span class="badge bg-dark">Gluten-Free</span>
+                </div>
+                <div class="p-2 bg-secondary bg-opacity-25 rounded border border-secondary small">
+                    <strong>Stop #3: David P.</strong> - 88 Oak Blvd (<span class="text-warning fw-bold">7.3km</span>) <span class="badge bg-dark">Diabetic-Safe</span>
+                </div>
+            </div>
+
+            <!-- Dietitian Preview -->
+            <div id="mock-preview-drawer-dietitian" class="d-none">
+                <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-2 mb-3">
+                    <span class="fw-bold text-info"><i class="bi bi-journal-medical me-1"></i>Menu Certification Panel</span>
+                    <span class="badge bg-info">Active</span>
+                </div>
+                <div class="small">
+                    <div class="mb-1 text-info"><i class="bi bi-check-circle-fill me-1"></i>Medically Tailored Meal Plan APPROVED</div>
+                    <div class="text-muted">Certified allergen profiles matched dynamically with active senior registrants in Bangkok.</div>
+                </div>
+            </div>
+
+            <!-- Social worker Preview -->
+            <div id="mock-preview-drawer-social" class="d-none">
+                <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-2 mb-3">
+                    <span class="fw-bold text-warning"><i class="bi bi-chat-heart me-1"></i>Welfare Alerts Queue</span>
+                    <span class="badge bg-danger">1 High Priority</span>
+                </div>
+                <div class="p-2 bg-danger bg-opacity-10 rounded border border-danger small">
+                    <strong class="text-danger">Alert: Robert S.</strong> - 3 missed drop-off reports. Automated welfare follow-up logged.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: Kitchen Panel Container -->
+    <div id="drawer-panel-kitchen" class="drawer-panel d-none animate-fade-in">
+        <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill mb-2 fw-bold align-self-start"><i class="bi bi-house-door-fill me-1"></i>CULINARY OUTSOURCING</span>
+        <h3 class="fw-extrabold text-primary mb-3">Partner Kitchen Operations</h3>
+        <p class="text-muted small mb-4">
+            Partner kitchens prepare bulk portion lists. To ensure clinical compliance, hold temperatures are logged before food release. How should the system enforce these temperature locks?
+        </p>
+        <div class="p-4 bg-white rounded-5 border border-light shadow-sm">
+            <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-thermometer-high me-2"></i>HACCP Temperature Lockout Policy</h5>
+            <div class="d-flex flex-column gap-3">
+                <div class="poll-card" id="poll-drawer-kt-1" onclick="submitPoll('kt', 1, 'Strict Auto-Lockouts')">
+                    <h6 class="fw-bold mb-1">Option 1: Strict Auto-Lockouts (Recommended)</h6>
+                    <p class="text-muted small mb-0">Holding temperature logs &lt;140°F instantly lock the route in Courier view. High security.</p>
+                </div>
+                <div class="poll-card" id="poll-drawer-kt-2" onclick="submitPoll('kt', 2, 'Human Chef Verification')">
+                    <h6 class="fw-bold mb-1">Option 2: Human Sign-Off Override</h6>
+                    <p class="text-muted small mb-0">Alerts display, but permit the head chef to manually authorize dispatches with typed explanations.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 5: Donor Panel Container -->
+    <div id="drawer-panel-donor" class="drawer-panel d-none animate-fade-in">
+        <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill mb-2 fw-bold align-self-start"><i class="bi bi-cash-coin me-1"></i>FUNDRAISING CORE</span>
+        <h3 class="fw-extrabold text-primary mb-3">Donor & Corporate Sponsorship</h3>
+        <p class="text-muted small mb-4">
+            We accept standard cash contributions alongside logistical underwriting assets (like e-bikes or commercial ovens) to expand our outreach capacities.
+        </p>
+        <div class="p-4 bg-white rounded-5 border border-light shadow-sm">
+            <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-wallet2 me-2"></i>Sponsorship Underwriting Poll</h5>
+            <div class="d-flex flex-column gap-3">
+                <div class="poll-card" id="poll-drawer-dn-1" onclick="submitPoll('dn', 1, 'Adopt a Neighborhood Kitchen')">
+                    <h6 class="fw-bold mb-1">Option 1: Adopt a Neighborhood Kitchen</h6>
+                    <p class="text-muted small mb-0">Underwrite the entire raw ingredient costs of a localized partner kitchen.</p>
+                </div>
+                <div class="poll-card" id="poll-drawer-dn-2" onclick="submitPoll('dn', 2, 'Underwrite a Volunteer Rider')">
+                    <h6 class="fw-bold mb-1">Option 2: Sponsor Volunteer Fleet</h6>
+                    <p class="text-muted small mb-0">Fund delivery vehicle expenses, thermal compartments, and courier insurance.</p>
+                </div>
+                <div class="poll-card" id="poll-drawer-dn-3" onclick="submitPoll('dn', 3, 'Subsidize Member Portions')">
+                    <h6 class="fw-bold mb-1">Option 3: Directly Fund Senior Meals</h6>
+                    <p class="text-muted small mb-0">Fund a hot medically tailored meal subscription for a senior for 1 full year.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 6: Coordinator Panel Container -->
+    <div id="drawer-panel-coordinator" class="drawer-panel d-none animate-fade-in">
+        <span class="badge bg-info bg-opacity-10 text-info px-3 py-2 rounded-pill mb-2 fw-bold align-self-start"><i class="bi bi-map-fill me-1"></i>OPERATIONS DESK</span>
+        <h3 class="fw-extrabold text-primary mb-3">Coordination & GIS Route Dispatching</h3>
+        <p class="text-muted small mb-3">
+            Coordinators audit applicants, verify geofencing distance margins, and allocate routes. Below is an interactive queue representing what our operations staff uses to audit pending registrants.
+        </p>
+        
+        <!-- Interactive review queue simulator -->
+        <div class="card p-3 rounded-4 bg-light border border-light mb-4 shadow-sm">
+            <h6 class="fw-bold text-primary mb-2 small"><i class="bi bi-clipboard-check-fill me-1"></i>Interactive Review Queue</h6>
+            <div class="table-responsive" style="border: none;">
+                <table class="table table-sm align-middle small mb-0">
+                    <thead>
+                        <tr class="text-muted">
+                            <th>Applicant</th>
+                            <th>Details</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr id="drawer-review-row-1">
+                            <td><strong>Robert S.</strong><br><span class="text-muted small">Senior</span></td>
+                            <td>GIS: 4.2km<br><span class="badge bg-light text-dark">Low-Sodium</span></td>
+                            <td><button class="btn btn-sm btn-success px-2 py-0 border-0" onclick="approveReviewDrawer('drawer-review-row-1', 'Robert S.', 4.2)">Approve</button></td>
+                        </tr>
+                        <tr id="drawer-review-row-2">
+                            <td><strong>Sarah M.</strong><br><span class="text-muted small">Volunteer</span></td>
+                            <td>Dietitian Specialization<br><span class="text-muted small">License: Verified</span></td>
+                            <td><button class="btn btn-sm btn-success px-2 py-0 border-0" onclick="approveReviewDrawer('drawer-review-row-2', 'Sarah M.')">Approve</button></td>
+                        </tr>
+                        <tr id="drawer-review-row-3">
+                            <td><strong>Chef Marcus</strong><br><span class="text-muted small">Kitchen</span></td>
+                            <td>Capacity: 250<br><span class="text-muted small">HACCP Cert: Verified</span></td>
+                            <td><button class="btn btn-sm btn-success px-2 py-0 border-0" onclick="approveReviewDrawer('drawer-review-row-3', 'Chef Marcus')">Approve</button></td>
+                        </tr>
+                        <tr id="drawer-review-row-4">
+                            <td><strong>Margaret T.</strong><br><span class="text-muted small">Senior</span></td>
+                            <td>GIS: 22.4km<br><span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 small mt-1">Exceeds Max Range (&gt;15km)</span></td>
+                            <td><button class="btn btn-sm btn-warning px-2 py-0 border-0 text-white fw-bold" onclick="approveReviewDrawer('drawer-review-row-4', 'Margaret T.', 22.4)">Review</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="p-4 bg-white rounded-5 border border-light shadow-sm">
+            <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-diagram-3-fill me-2"></i>GIS Scheduling Algorithm Poll</h5>
+            <div class="d-flex flex-column gap-3">
+                <div class="poll-card" id="poll-drawer-co-1" onclick="submitPoll('co', 1, 'Auto-Sequenced GIS Optimization')">
+                    <h6 class="fw-bold mb-1">Option 1: Auto-Sequenced GIS Optimization (Recommended)</h6>
+                    <p class="text-muted small mb-0">System automatically calculates distance matrices and allocates riders. Maximum speed.</p>
+                </div>
+                <div class="poll-card" id="poll-drawer-co-2" onclick="submitPoll('co', 2, 'Manual Drag-and-Drop Scheduling')">
+                    <h6 class="fw-bold mb-1">Option 2: Drag-and-Drop Route Builders</h6>
+                    <p class="text-muted small mb-0">Provides a map board allowing coordinators to manually cluster delivery sheets.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 7: Admin Panel Container -->
+    <div id="drawer-panel-admin" class="drawer-panel d-none animate-fade-in">
+        <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill mb-2 fw-bold align-self-start"><i class="bi bi-shield-lock-fill me-1"></i>SECURITY & ACCESS CONTROL</span>
+        <h3 class="fw-extrabold text-primary mb-3">Admin Executive Dashboard</h3>
+        <p class="text-muted small mb-4">
+            Admin roles oversee MIS aggregate metrics, configure central operations parameters, and check system safety locks.
+        </p>
+        <div class="p-4 bg-white rounded-5 border border-light shadow-sm">
+            <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-key-fill me-2"></i>Dashboard Security Lock Policies</h5>
+            <div class="d-flex flex-column gap-3">
+                <div class="poll-card" id="poll-drawer-ad-1" onclick="submitPoll('ad', 1, 'Role-Based Access Control + Multi-Factor Auth')">
+                    <h6 class="fw-bold mb-1">Option 1: Role-Based Access Control + MFA (Recommended)</h6>
+                    <p class="text-muted small mb-0">Enforce multi-factor verification. Restricts critical views exclusively to approved administrators.</p>
+                </div>
+                <div class="poll-card" id="poll-drawer-ad-2" onclick="submitPoll('ad', 2, 'Open Collaboration View')">
+                    <h6 class="fw-bold mb-1">Option 2: Open Collaborative Transparency</h6>
+                    <p class="text-muted small mb-0">Grants open visibility to coordinators and partners to maximize coordination speed.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Map Selection Modal (Leaflet GIS) -->
+<div class="modal fade" id="gpsMapModal" tabindex="-1" aria-labelledby="gpsMapModalLabel" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-5 border-0 shadow-lg" style="background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(10px);">
+            <div class="modal-header border-0 pb-0 pt-4 px-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <h5 class="modal-title fw-extrabold text-primary" id="gpsMapModalLabel" style="font-family: 'Outfit', sans-serif;">
+                        <i class="bi bi-geo-alt-fill text-accent me-2"></i>Select Your Delivery Address
+                    </h5>
+                    <p class="text-muted small mb-0 mt-1">Click on the map to pinpoint your exact home location in Thailand.</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body px-4 py-3">
+                <div id="gps-leaflet-map" class="rounded-4 border shadow-inner" style="height: 350px; width: 100%; position: relative; z-index: 1;"></div>
+                
+                <div class="mt-3 p-3 rounded-4 bg-light border border-light">
+                    <div class="d-flex align-items-start gap-2">
+                        <div class="logo-icon bg-primary bg-opacity-10 text-primary p-2 rounded-3 fs-5 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="bi bi-house-door-fill"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <span class="fw-bold small text-primary mb-1 d-block"><i class="bi bi-check-circle-fill text-success me-1"></i>Selected Address Pinpoint</span>
+                            <div id="leaflet-resolved-address" class="text-dark fw-semibold small">Resolving location details...</div>
+                            <div id="leaflet-coords-preview" class="text-muted small mt-1">Lat: -, Lon: -</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Simulation Settings (Bangkok Pilot Test Presets Quick-Jump) -->
+                <div class="mt-3 p-3 rounded-4 bg-primary bg-opacity-5 border border-primary border-opacity-10">
+                    <span class="fw-bold small text-primary d-block mb-2"><i class="bi bi-rocket-takeoff-fill me-1"></i>Bangkok Pilot Test Presets (Quick-Jump)</span>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button type="button" class="btn btn-sm rounded-pill fw-bold px-3 py-2 text-success shadow-sm" onclick="jumpToPreset(13.7712, 100.6401, 'Bangkapi District')" style="background-color: #ecfdf5; border: 1.5px solid #10b981; font-size: 0.85rem; transition: all 0.2s ease;">
+                            📍 Bangkapi (Close Hub - Hot Meals)
+                        </button>
+                        <button type="button" class="btn btn-sm rounded-pill fw-bold px-3 py-2 shadow-sm" onclick="jumpToPreset(13.7000, 100.4500, 'Thon Buri District')" style="background-color: #fffbeb; border: 1.5px solid #f59e0b; color: #b45309; font-size: 0.85rem; transition: all 0.2s ease;">
+                            📍 Thon Buri (Moderate Hub - Weekend Packs)
+                        </button>
+                        <button type="button" class="btn btn-sm rounded-pill fw-bold px-3 py-2 text-danger shadow-sm" onclick="jumpToPreset(12.9236, 100.8824, 'Pattaya City')" style="background-color: #fff1f2; border: 1.5px solid #f43f5e; font-size: 0.85rem; transition: all 0.2s ease;">
+                            📍 Pattaya (Out of Service - Waitlist)
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0 pb-4 px-4 d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary px-4 py-2 rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-premium px-5 py-2 rounded-pill fw-bold" id="btn-confirm-leaflet-location" onclick="confirmLeafletLocation()">
+                    <i class="bi bi-check2-circle me-1"></i>Confirm Location
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Integrated JS Multi-step form controller & validation engines -->
+<script>
+    let currentStep = 1;
+    const totalSteps = 4;
+    let calculatedDistance = null;
+    let generatedOtpCode = null;
+    let registeredMemberName = '';
+    let registeredMemberEmail = '';
+    let registeredMemberUsername = '';
+    let leafletMap = null;
+    let leafletMarker = null;
+    let selectedCoords = null;
+    let mockHubMarker = null;
+    let leafletConnectionLine = null;
+    
+    // Bangkok Pilot Active Kitchens List loaded dynamically from DB
+    let activeKitchensList = [];
+    let kitchenMarkers = [];
+    let nearestHubDistance = 0.0;
+    let nearestHubName = "";
+
+    // Drawer overlay controllers
+    function openRegistrationDrawer(role = 'member') {
+        document.getElementById('registration-drawer').classList.add('open');
+        document.getElementById('drawer-backdrop').classList.add('show');
+        document.body.style.overflow = 'hidden'; // Lock homepage scrolling
+        
+        // Select the role in the dropdown
+        const selector = document.getElementById('drawerRoleSelector');
+        if (selector) {
+            selector.value = role;
+        }
+        
+        // Switch to that role
+        switchDrawerRole(role);
+        
+        // Auto-focus first input
+        if (role === 'member') {
+            setTimeout(() => {
+                const nameInput = document.getElementById('memberName');
+                if (nameInput) nameInput.focus();
+            }, 450);
+        }
+    }
+    
+    function closeRegistrationDrawer() {
+        document.getElementById('registration-drawer').classList.remove('open');
+        document.getElementById('drawer-backdrop').classList.remove('show');
+        document.body.style.overflow = ''; // Restore homepage scrolling
+    }
+
+    // Dynamic Role Switching Engine inside Drawer
+    function switchDrawerRole(role) {
+        // 1. Hide all drawer panels
+        const panels = document.querySelectorAll('.drawer-panel');
+        panels.forEach(p => {
+            p.classList.add('d-none');
+            p.classList.remove('active');
+        });
+        
+        // 2. Show the selected panel
+        const targetPanel = document.getElementById(`drawer-panel-${role}`);
+        if (targetPanel) {
+            targetPanel.classList.remove('d-none');
+            targetPanel.classList.add('active');
+        }
+        
+        // 3. Update the showcase card details based on role
+        const showcaseCard = document.getElementById('drawer-showcase-card');
+        const badge = document.getElementById('drawer-showcase-badge');
+        const title = document.getElementById('drawer-showcase-title');
+        const desc = document.getElementById('drawer-showcase-desc');
+        const img = document.getElementById('drawer-showcase-img');
+        const imgBadgeSpan = document.getElementById('drawer-showcase-img-badge-span');
+        const imgBadge = document.getElementById('drawer-showcase-img-badge');
+        const mainTitle = document.getElementById('drawer-main-title');
+        
+        // Define role assets & themes (dark premium high-contrast gradients)
+        const themes = {
+            member: {
+                gradient: 'linear-gradient(135deg, #09090b 0%, #1e1b4b 60%, #311042 100%)',
+                badgeText: '✨ Pilot Program Active',
+                title: 'Intake Portal',
+                desc: 'Nourishing hot meals delivered Monday through Friday to qualified homebound seniors.',
+                img: '/static/images/hero_senior_delivery.png',
+                mainTitle: '<i class="bi bi-heart-pulse-fill text-danger me-2"></i>Member Intake Onboarding',
+                badgeClass: 'bg-success',
+                iconClass: 'bi bi-shield-fill-check'
+            },
+            caregiver: {
+                gradient: 'linear-gradient(135deg, #020617 0%, #0369a1 60%, #0c4a6e 100%)',
+                badgeText: '✨ Linked Care Network',
+                title: 'Caregiver Satellite',
+                desc: 'Help family members or social carers oversee daily meal deliveries, dietary profiles, and real-time rider tracking.',
+                img: '/static/images/caregiver_support.png',
+                mainTitle: '<i class="bi bi-people-fill text-info me-2"></i>Caregiver Connection',
+                badgeClass: 'bg-info',
+                iconClass: 'bi bi-people-fill'
+            },
+            volunteer: {
+                gradient: 'linear-gradient(135deg, #022c22 0%, #065f46 60%, #064e3b 100%)',
+                badgeText: '✨ Driving Impact',
+                title: 'Volunteer Specialist',
+                desc: 'Join our active driver and rider network. Deliver hot meals, assist in kitchen prep, or coordinate welfare calls.',
+                img: '/static/images/volunteer_rider.png',
+                mainTitle: '<i class="bi bi-bicycle text-success me-2"></i>Volunteer Specialist',
+                badgeClass: 'bg-success',
+                iconClass: 'bi bi-bicycle'
+            },
+            kitchen: {
+                gradient: 'linear-gradient(135deg, #1c1917 0%, #b45309 60%, #78350f 100%)',
+                badgeText: '✨ Culinary Partner',
+                title: 'Kitchen Operations',
+                desc: 'Coordinate kitchen preparation, track culinary supply lines, and log temperature safety compliance benchmarks.',
+                img: '/static/images/premium_kitchen_prep.png',
+                mainTitle: '<i class="bi bi-house-door-fill text-warning me-2"></i>Kitchen Portal',
+                badgeClass: 'bg-warning text-dark',
+                iconClass: 'bi bi-house-door-fill'
+            },
+            donor: {
+                gradient: 'linear-gradient(135deg, #1f0208 0%, #be123c 60%, #881337 100%)',
+                badgeText: '✨ Fund Welfare',
+                title: 'Sponsorship Portal',
+                desc: 'Sponsor hot meals for seniors in waitlisted zones. Fund food safety logistics and track donation allocations.',
+                img: '/static/images/donor_pledge.png',
+                mainTitle: '<i class="bi bi-cash-coin text-danger me-2"></i>Donor & Sponsor',
+                badgeClass: 'bg-danger',
+                iconClass: 'bi bi-heart-fill'
+            },
+            coordinator: {
+                gradient: 'linear-gradient(135deg, #0b0f19 0%, #4338ca 60%, #3730a3 100%)',
+                badgeText: '✨ Dynamic GIS Router',
+                title: 'Operations Desk',
+                desc: 'Audit pending applicants, verify geofencing boundaries, auto-match delivery routes, and dispatch riders.',
+                img: '/static/images/coordinator_dispatch.png',
+                mainTitle: '<i class="bi bi-map-fill text-primary me-2"></i>Coordinator Desk',
+                badgeClass: 'bg-primary',
+                iconClass: 'bi bi-globe2'
+            },
+            admin: {
+                gradient: 'linear-gradient(135deg, #09090b 0%, #3f3f46 60%, #27272a 100%)',
+                badgeText: '✨ Executive Secured',
+                title: 'Executive Admin',
+                desc: 'Define central security rules, check active data flow bounds, manage portal access, and enforce central MFA policies.',
+                img: '/static/images/admin_security.png',
+                mainTitle: '<i class="bi bi-shield-lock-fill text-dark me-2"></i>Executive Admin',
+                badgeClass: 'bg-dark',
+                iconClass: 'bi bi-lock-fill'
+            }
+        };
+        
+        const data = themes[role];
+        if (data) {
+            if (showcaseCard) showcaseCard.style.background = data.gradient;
+            if (badge) badge.innerText = data.badgeText;
+            if (title) title.innerText = data.title;
+            if (desc) desc.innerText = data.desc;
+            if (img) img.src = data.img;
+            if (mainTitle) mainTitle.innerHTML = data.mainTitle;
+            
+            if (imgBadgeSpan) {
+                imgBadgeSpan.className = `position-absolute translate-middle badge rounded-pill p-1 shadow border border-white animate-bounce-custom ${data.badgeClass}`;
+            }
+            if (imgBadge) {
+                imgBadge.className = `${data.iconClass} text-white`;
+                if (role === 'kitchen') {
+                    imgBadge.className = `${data.iconClass} text-dark`;
+                }
+            }
+        }
+    }
+
+    // Skill switcher for Volunteer panel in Drawer
+    function selectSkillDrawer(skill) {
+        document.getElementById('skill-drawer-rider').checked = (skill === 'rider');
+        document.getElementById('skill-drawer-dietitian').checked = (skill === 'dietitian');
+        document.getElementById('skill-drawer-social').checked = (skill === 'social');
+        
+        document.getElementById('skill-btn-drawer-rider').style.borderColor = (skill === 'rider') ? 'var(--bs-primary)' : 'rgba(0,0,0,0.05)';
+        document.getElementById('skill-btn-drawer-dietitian').style.borderColor = (skill === 'dietitian') ? 'var(--bs-primary)' : 'rgba(0,0,0,0.05)';
+        document.getElementById('skill-btn-drawer-social').style.borderColor = (skill === 'social') ? 'var(--bs-primary)' : 'rgba(0,0,0,0.05)';
+        
+        document.getElementById('mock-preview-drawer-rider').classList.toggle('d-none', skill !== 'rider');
+        document.getElementById('mock-preview-drawer-dietitian').classList.toggle('d-none', skill !== 'dietitian');
+        document.getElementById('mock-preview-drawer-social').classList.toggle('d-none', skill !== 'social');
+    }
+
+    // Row approval simulator for Coordinator review queue in Drawer
+    function approveReviewDrawer(rowId, name, distance = null) {
+        const row = document.getElementById(rowId);
+        if (row) {
+            row.style.transition = 'all 0.4s ease';
+            row.style.opacity = '0.5';
+            row.style.backgroundColor = 'rgba(25, 135, 84, 0.1)';
+            const btn = row.querySelector('button');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = 'Approved';
+                btn.className = 'btn btn-sm btn-outline-success px-2 py-0 border-0';
+            }
+            showToast(`Audited and approved workspace credentials for ${name}!`, "success", "Operations Audit Approved");
+        }
+    }
+
+    // Premium custom notification toast helper
+    function showToast(message, type = 'error', title = 'Validation Error') {
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            document.body.appendChild(container);
+        }
+        
+        const toast = document.createElement('div');
+        toast.className = `custom-toast custom-toast-${type}`;
+        
+        let iconClass = 'bi-exclamation-triangle-fill';
+        if (type === 'success') iconClass = 'bi-check-circle-fill';
+        if (type === 'info') iconClass = 'bi-info-circle-fill';
+        if (type === 'error') iconClass = 'bi-exclamation-octagon-fill';
+        
+        toast.innerHTML = `
+            <div class="custom-toast-icon"><i class="bi ${iconClass}"></i></div>
+            <div class="custom-toast-content">
+                <div class="custom-toast-title">${title}</div>
+                <div class="custom-toast-message">${message}</div>
+            </div>
+            <button class="custom-toast-close" type="button" aria-label="Close text warning alert" onclick="this.parentElement.classList.remove('show'); setTimeout(() => this.parentElement.remove(), 400);"><i class="bi bi-x"></i></button>
+        `;
+        
+        container.appendChild(toast);
+        setTimeout(() => toast.classList.add('show'), 50);
+        
+        // Auto dismiss after 5 seconds
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }
+        }, 5000);
+    }
+
+    // Load active kitchens dynamically from Django database API
+    async function loadActiveKitchens() {
+        try {
+            const res = await fetch('/api/active-kitchens/');
+            const data = await res.json();
+            if (data && data.status === 'success') {
+                activeKitchensList = data.kitchens;
+            }
+        } catch (err) {
+            console.error("Failed to load active kitchens list: ", err);
+            // Fallback list
+            activeKitchensList = [
+                { name: 'MerryMeal Hub - Bangkapi (Central)', latitude: 13.7650, longitude: 100.6430, address: 'The Mall Bangkapi, Lat Phrao Rd, Bangkok' },
+                { name: 'MerryMeal Hub - Chatuchak (North)', latitude: 13.8030, longitude: 100.5530, address: 'Central Ladprao, Phahonyothin Rd, Bangkok' },
+                { name: 'MerryMeal Hub - Sukhumvit (South)', latitude: 13.7360, longitude: 100.5600, address: 'Asok Intersection, Sukhumvit Rd, Bangkok' }
+            ];
+        }
+    }
+
+    // High-accuracy great-circle Haversine distance formula
+    function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371.0; // Earth radius in km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = 
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return parseFloat((R * c).toFixed(1));
+    }
+
+    // HTML5 Geolocation (GPS) Auto-detection Engine with Geocoding simulation and Map Pop-up
+    function detectGPSLocation() {
+        const btn = document.getElementById('btn-gps-detect');
+        
+        if (!navigator.geolocation) {
+            showToast('GPS is not supported by your browser.', 'error', 'GPS Unsupported');
+            return;
+        }
+
+        const originalBtnHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>GPS...';
+        
+        showToast('Querying satellite coordinates. Please click "Allow" on the browser popup if prompted...', 'info', 'Querying GPS');
+
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                
+                btn.disabled = false;
+                btn.innerHTML = originalBtnHTML;
+                
+                // Show Leaflet Map Modal safely without duplicate backdrops
+                const mapModalEl = document.getElementById('gpsMapModal');
+                let mapModal = bootstrap.Modal.getInstance(mapModalEl);
+                if (!mapModal) {
+                    mapModal = new bootstrap.Modal(mapModalEl);
+                }
+                mapModal.show();
+                
+                // Pre-load active kitchens list from DB before drawing map
+                await loadActiveKitchens();
+                
+                // Initialize/Update Map
+                setTimeout(() => {
+                    initLeafletMap(lat, lon);
+                }, 300); // short timeout to let bootstrap modal expand so Leaflet initializes correctly
+            },
+            (error) => {
+                btn.disabled = false;
+                btn.innerHTML = originalBtnHTML;
+                
+                let errMsg = "Unable to retrieve GPS coordinates. Please type your address manually.";
+                if (error.code === error.PERMISSION_DENIED) {
+                    errMsg = "Location permission denied. Please allow location access or type your address manually.";
+                } else if (error.code === error.POSITION_UNAVAILABLE) {
+                    errMsg = "GPS position unavailable. Please type your address manually.";
+                } else if (error.code === error.TIMEOUT) {
+                    errMsg = "GPS request timed out. Please type your address manually.";
+                }
+                showToast(errMsg, 'warning', 'GPS Signal Failed');
+            },
+            { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
+        );
+    }
+
+    function initLeafletMap(lat, lon) {
+        selectedCoords = [lat, lon];
+        
+        document.getElementById('leaflet-coords-preview').innerText = `Lat: ${lat.toFixed(6)}, Lon: ${lon.toFixed(6)}`;
+        
+        if (leafletMap === null) {
+            leafletMap = L.map('gps-leaflet-map').setView([lat, lon], 12);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(leafletMap);
+            
+            // Create circle marker for User (Indigo color)
+            leafletMarker = L.circleMarker([lat, lon], {
+                radius: 10,
+                fillColor: '#4f46e5',
+                fillOpacity: 0.9,
+                color: '#ffffff',
+                weight: 3
+            }).addTo(leafletMap);
+            
+            // Click to reposition user pin
+            leafletMap.on('click', function(e) {
+                const coords = e.latlng;
+                leafletMarker.setLatLng(coords);
+                updateMarkerLocation(coords.lat, coords.lng);
+            });
+        } else {
+            leafletMap.setView([lat, lon], 12);
+            leafletMarker.setLatLng([lat, lon]);
+        }
+
+        // Draw all active mock/database kitchen hubs as soft blue pins
+        if (kitchenMarkers && kitchenMarkers.length > 0) {
+            kitchenMarkers.forEach(m => leafletMap.removeLayer(m));
+        }
+        kitchenMarkers = [];
+
+        activeKitchensList.forEach(k => {
+            const m = L.circleMarker([k.latitude, k.longitude], {
+                radius: 8,
+                fillColor: '#93c5fd', // Soft blue for non-selected hubs
+                fillOpacity: 0.8,
+                color: '#ffffff',
+                weight: 2
+            }).addTo(leafletMap)
+              .bindPopup(`<strong>${k.name}</strong><br>${k.address || 'Partner Kitchen'}`);
+            kitchenMarkers.push(m);
+        });
+        
+        updateMarkerLocation(lat, lon);
+    }
+
+    async function updateMarkerLocation(lat, lon) {
+        selectedCoords = [lat, lon];
+        document.getElementById('leaflet-coords-preview').innerText = `Lat: ${lat.toFixed(6)}, Lon: ${lon.toFixed(6)}`;
+        
+        updateHubConnection(lat, lon);
+
+        const addressTextEl = document.getElementById('leaflet-resolved-address');
+        addressTextEl.innerHTML = '<span class="spinner-border spinner-border-sm text-primary me-2" role="status"></span>Resolving street address details...';
+        
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`);
+            const data = await res.json();
+            if (data && data.display_name) {
+                addressTextEl.innerText = data.display_name;
+            } else {
+                addressTextEl.innerText = `${lat.toFixed(4)}, ${lon.toFixed(4)}, Thailand`;
+            }
+        } catch (err) {
+            console.error("Geocoding failed: ", err);
+            addressTextEl.innerText = `${lat.toFixed(4)}, ${lon.toFixed(4)}, Thailand`;
+        }
+    }
+
+    function updateHubConnection(lat, lon) {
+        if (mockHubMarker) leafletMap.removeLayer(mockHubMarker);
+        if (leafletConnectionLine) leafletMap.removeLayer(leafletConnectionLine);
+        
+        // Loop through all active kitchen hubs to find the closest one
+        let closestHub = null;
+        let minDistance = Infinity;
+
+        activeKitchensList.forEach(k => {
+            const dist = calculateHaversineDistance(lat, lon, k.latitude, k.longitude);
+            if (dist < minDistance) {
+                minDistance = dist;
+                closestHub = k;
+            }
+        });
+
+        if (closestHub) {
+            nearestHubDistance = minDistance;
+            nearestHubName = closestHub.name;
+
+            // Determine service type theme color and premium text popup
+            let themeColor = '#10b981'; // Green for Hot Meals
+            let serviceBadge = '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 small mt-1 px-2 py-1 fw-bold">Hot Meals Eligible</span>';
+            
+            // Check if address is in geofence
+            const previewAddr = document.getElementById('leaflet-resolved-address').innerText.toLowerCase();
+            const isLocInBangkok = previewAddr.includes('bangkok') || previewAddr.includes('krung thep') || previewAddr.includes('bangkapi') || previewAddr.includes('thon buri') || previewAddr.includes('sukhumvit') || previewAddr.includes('chatuchak') || previewAddr.includes('resolving');
+
+            if (!isLocInBangkok && !previewAddr.includes('resolving')) {
+                themeColor = '#f43f5e'; // Red for Waitlist
+                serviceBadge = '<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 small mt-1 px-2 py-1 fw-bold">Expansion Waitlist</span>';
+            } else if (minDistance > 15.0) {
+                themeColor = '#e11d48'; // Red for Out of Range
+                serviceBadge = '<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 small mt-1 px-2 py-1 fw-bold">Out of Range / Waitlist</span>';
+            } else if (minDistance >= 10.0) {
+                themeColor = '#d97706'; // Dark Amber/Orange for Weekend Packs
+                serviceBadge = '<span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 small mt-1 px-2 py-1 fw-bold" style="color: #b45309 !important; border-color: rgba(245, 158, 11, 0.25) !important; background-color: rgba(245, 158, 11, 0.1) !important;">Weekend Packs</span>';
+            }
+
+            // Highlight the closest hub with the matching theme color
+            mockHubMarker = L.circleMarker([closestHub.latitude, closestHub.longitude], {
+                radius: 12,
+                fillColor: themeColor,
+                fillOpacity: 0.95,
+                color: '#ffffff',
+                weight: 3
+            }).addTo(leafletMap)
+              .bindPopup(`<strong>${closestHub.name} (Nearest Kitchen Hub)</strong><br>Distance: <strong>${minDistance} km</strong><br>${serviceBadge}<br><span class="text-muted small">${closestHub.address || ''}</span>`)
+              .openPopup();
+                
+            // Draw matching connection polyline to closest hub
+            leafletConnectionLine = L.polyline([[lat, lon], [closestHub.latitude, closestHub.longitude]], {
+                color: themeColor,
+                weight: 4,
+                dashArray: '8, 12',
+                opacity: 0.85
+            }).addTo(leafletMap);
+        }
+    }
+
+    // Quick-Jump button handler for testing presets inside Thailand
+    function jumpToPreset(lat, lon, presetName) {
+        if (leafletMap) {
+            leafletMarker.setLatLng([lat, lon]);
+            leafletMap.setView([lat, lon], 12);
+            updateMarkerLocation(lat, lon);
+            showToast(`Jumped pin coordinates to ${presetName} test region!`, 'info', 'Preset Simulation');
+        }
+    }
+
+    function confirmLeafletLocation() {
+        const address = document.getElementById('leaflet-resolved-address').innerText;
+        const lat = selectedCoords[0];
+        const lon = selectedCoords[1];
+        
+        const addrInput = document.getElementById('memberAddress');
+        addrInput.value = address;
+        clearFieldError(addrInput);
+        
+        // Store coordinates in the form hidden inputs
+        document.getElementById('memberLatitude').value = lat;
+        document.getElementById('memberLongitude').value = lon;
+        
+        // Check if address is in coverage (must be in Bangkok/Krung Thep)
+        const addrLower = address.toLowerCase();
+        const isInBangkok = addrLower.includes('bangkok') || addrLower.includes('krung thep') || addrLower.includes('bangkapi') || addrLower.includes('thon buri') || addrLower.includes('sukhumvit') || addrLower.includes('chatuchak');
+        
+        const card = document.getElementById('gis-results-card');
+        const alertBox = document.getElementById('gis-alert-box');
+        const iconDiv = document.getElementById('gis-icon-div');
+        const header = document.getElementById('gis-header-text');
+        const desc = document.getElementById('gis-desc-text');
+        
+        card.classList.remove('d-none');
+        
+        if (!isInBangkok) {
+            calculatedDistance = -1; // Out of coverage Waitlist flag
+            alertBox.className = "p-4 rounded-4 border shadow-sm gis-status-waitlist";
+            iconDiv.innerHTML = '<i class="bi bi-x-circle-fill text-danger fs-2"></i>';
+            header.className = "fw-bold mb-1 text-danger";
+            header.innerText = "Out of Active Coverage Zone";
+            desc.innerHTML = `Your selected home address is outside our active Bangkok delivery regions. You will be automatically placed on our <strong>Expansion Waitlist</strong> upon completing registration. We will contact you as soon as kitchen partner coverage reaches your area!`;
+            showToast('Your address is outside our active delivery regions. You will be automatically queued for the Expansion Waitlist.', 'warning', 'Waitlist Placement');
+        } else {
+            calculatedDistance = nearestHubDistance;
+            
+            if (nearestHubDistance < 10.0) {
+                alertBox.className = "p-4 rounded-4 border shadow-sm gis-status-hot-meals";
+                iconDiv.innerHTML = '<i class="bi bi-check-circle-fill text-success fs-2"></i>';
+                header.className = "fw-bold mb-1 text-success";
+                header.innerText = `GIS Verified: Within Range (${nearestHubDistance} km)`;
+                desc.innerHTML = `Your home is within our active service perimeter. Rerouting connecting polyline to <strong>${nearestHubName}</strong> (${nearestHubDistance}km). You qualify for Hot Noon Meal Deliveries!`;
+                showToast(`GIS Verification success! Within range (${nearestHubDistance} km).`, 'success', 'GIS Verified');
+            } else if (nearestHubDistance <= 15.0) {
+                alertBox.className = "p-4 rounded-4 border shadow-sm gis-status-weekend-packs";
+                iconDiv.innerHTML = '<i class="bi bi-exclamation-triangle-fill text-warning fs-2"></i>';
+                header.className = "fw-bold mb-1 text-warning";
+                header.innerText = `GIS Verification: Distance Limit (${nearestHubDistance} km)`;
+                desc.innerHTML = `You live slightly beyond our 10km perimeter. Rerouting connecting polyline to <strong>${nearestHubName}</strong> (${nearestHubDistance}km). You qualify for Weekend Frozen Packs!`;
+                showToast(`GIS Verification: Eligible for weekend frozen meals (${nearestHubDistance} km).`, 'info', 'GIS Verification');
+            } else {
+                alertBox.className = "p-4 rounded-4 border shadow-sm gis-status-waitlist";
+                iconDiv.innerHTML = '<i class="bi bi-exclamation-octagon-fill text-danger fs-2"></i>';
+                header.className = "fw-bold mb-1 text-danger";
+                header.innerText = `GIS Flag: Exceeds Safe Range (${nearestHubDistance} km)`;
+                desc.innerHTML = `Your address is within our active region, but the calculated distance of <strong>${nearestHubDistance}km</strong> from the nearest ${nearestHubName} exceeds our maximum safety delivery transit limit of 15km. Your application will be flagged for coordinator manual safety reassessment.`;
+                showToast(`GIS Flag: Exceeds safe delivery range (${nearestHubDistance} km). Pending manual safety reassessment.`, 'error', 'Safety Range Warning');
+            }
+        }
+        
+        const mapModalEl = document.getElementById('gpsMapModal');
+        const modalInstance = bootstrap.Modal.getInstance(mapModalEl);
+        if (modalInstance) modalInstance.hide();
+    }
+
+    // Interactive name input filter (blocks numbers & symbols)
+    function filterNameInput(e) {
+        const input = e.target;
+        const start = input.selectionStart;
+        const originalVal = input.value;
+        const cleanedVal = originalVal.replace(/[^a-zA-Z\s\-']/g, '');
+        
+        if (originalVal !== cleanedVal) {
+            input.value = cleanedVal;
+            input.setSelectionRange(start - 1, start - 1);
+            showFieldError(input, "Name field accepts only letters, spaces, hyphens, and apostrophes.");
+        } else {
+            clearFieldError(input);
+        }
+    }
+
+    // Interactive phone input filter (blocks letters & complex punctuation)
+    function filterPhoneInput(e) {
+        const input = e.target;
+        const start = input.selectionStart;
+        const originalVal = input.value;
+        const cleanedVal = originalVal.replace(/[^0-9\s\+\-\(\)]/g, '');
+        
+        if (originalVal !== cleanedVal) {
+            input.value = cleanedVal;
+            input.setSelectionRange(start - 1, start - 1);
+            showFieldError(input, "Phone field accepts only digits, spaces, +, -, and parentheses.");
+        } else {
+            clearFieldError(input);
+        }
+    }
+
+    // Circular Reference Validation: Ensure primary phone doesn't match Emergency or Caregiver phones
+    function checkCircularPhones() {
+        const mPhone = document.getElementById('memberPhone').value.trim();
+        const ePhone = document.getElementById('emergencyPhone').value.trim();
+        const cPhone = document.getElementById('caregiverPhone').value.trim();
+        const hasCaregiver = document.getElementById('cg-yes').checked;
+        
+        let isValid = true;
+        
+        // Reset phone errors first if circular matching flags were active
+        const mErr = document.getElementById('memberPhone-error');
+        const eErr = document.getElementById('emergencyPhone-error');
+        const cErr = document.getElementById('caregiverPhone-error');
+        
+        if (mErr && mErr.innerText.includes("identical to")) clearFieldError(document.getElementById('memberPhone'));
+        if (eErr && eErr.innerText.includes("Emergency phone")) clearFieldError(document.getElementById('emergencyPhone'));
+        if (cErr && cErr.innerText.includes("Caregiver phone")) clearFieldError(document.getElementById('caregiverPhone'));
+        
+        if (!mPhone) return true;
+        
+        // Member Phone vs Emergency Phone
+        if (ePhone && mPhone === ePhone) {
+            showFieldError(document.getElementById('emergencyPhone'), "Emergency phone cannot be the same as your primary phone number.");
+            showFieldError(document.getElementById('memberPhone'), "Primary phone cannot be identical to your emergency contact phone.");
+            isValid = false;
+        }
+        
+        // Member Phone vs Caregiver Phone
+        if (hasCaregiver && cPhone && mPhone === cPhone) {
+            showFieldError(document.getElementById('caregiverPhone'), "Caregiver phone cannot be the same as your primary phone number.");
+            showFieldError(document.getElementById('memberPhone'), "Primary phone cannot be identical to your caregiver phone.");
+            isValid = false;
+        }
+        
+        // Caregiver Phone vs Emergency Phone
+        if (hasCaregiver && cPhone && ePhone && cPhone === ePhone) {
+            showFieldError(document.getElementById('emergencyPhone'), "Emergency phone cannot match the caregiver's phone.");
+            showFieldError(document.getElementById('caregiverPhone'), "Caregiver phone cannot match the emergency phone.");
+            isValid = false;
+        }
+        
+        return isValid;
+    }
+
+    // Interactive Password Strength Real-time Checklist Analyzer
+    function analyzePassword(e) {
+        const password = e.target.value;
+        const widget = document.getElementById('password-strength-widget');
+        
+        if (!password) {
+            widget.classList.add('d-none');
+            return;
+        }
+        
+        widget.classList.remove('d-none');
+        
+        let score = 0;
+        const checks = {
+            length: password.length >= 8,
+            upper: /[A-Z]/.test(password),
+            lower: /[a-z]/.test(password),
+            digit: /[0-9]/.test(password),
+            special: /[^A-Za-z0-9]/.test(password)
+        };
+        
+        // Update checklist items styles & check icons
+        for (const [key, passed] of Object.entries(checks)) {
+            const li = document.getElementById(`chk-${key}`);
+            const icon = document.getElementById(`icon-${key}`);
+            if (passed) {
+                score++;
+                li.classList.add('valid');
+                icon.className = "bi bi-check-circle-fill text-success me-2";
+            } else {
+                li.classList.remove('valid');
+                icon.className = "bi bi-x-circle-fill text-muted me-2";
+            }
+        }
+        
+        // Dynamic Strength progress color mapping
+        const bar = document.getElementById('password-strength-bar');
+        const label = document.getElementById('password-strength-label');
+        const percent = document.getElementById('password-strength-percent');
+        const pctVal = score * 20;
+        
+        bar.style.width = `${pctVal}%`;
+        percent.innerText = `${pctVal}%`;
+        
+        if (score <= 1) {
+            bar.style.backgroundColor = '#ef4444'; // Red
+            label.innerText = "Very Weak";
+            label.className = "text-danger";
+        } else if (score <= 3) {
+            bar.style.backgroundColor = '#f59e0b'; // Amber
+            label.innerText = "Moderate";
+            label.className = "text-warning";
+        } else if (score === 4) {
+            bar.style.backgroundColor = '#3b82f6'; // Blue
+            label.innerText = "Strong";
+            label.className = "text-primary";
+        } else {
+            bar.style.backgroundColor = '#10b981'; // Green
+            label.innerText = "Extremely Secure";
+            label.className = "text-success";
+        }
+    }
+
+    // Password Confirmation Matcher
+    function checkPasswordsMatch() {
+        const pass = document.getElementById('memberPassword');
+        const confirm = document.getElementById('memberConfirmPassword');
+        
+        if (!confirm.value) return false;
+        
+        if (pass.value !== confirm.value) {
+            showFieldError(confirm, "Passwords do not match. Please verify your typing.");
+            return false;
+        } else {
+            clearFieldError(confirm);
+            return true;
+        }
+    }
+
+    // Emergency detail concat helper (keeps DB backward-compatibility)
+    function updateEmergencyContactHidden() {
+        const name = document.getElementById('emergencyName').value.trim();
+        const relation = document.getElementById('emergencyRelation').value;
+        const phone = document.getElementById('emergencyPhone').value.trim();
+        
+        const hiddenInput = document.getElementById('emergencyContact');
+        if (name || phone) {
+            hiddenInput.value = `${name} (${relation}) - Ph: ${phone}`;
+        } else {
+            hiddenInput.value = "";
+        }
+    }
+
+    // Apply active field error styles
+    function showFieldError(inputEl, message) {
+        inputEl.classList.add('is-invalid');
+        inputEl.classList.remove('is-valid');
+        
+        const errDiv = document.getElementById(`${inputEl.id}-error`);
+        if (errDiv) {
+            errDiv.innerText = message;
+            errDiv.classList.remove('d-none');
+        }
+    }
+
+    // Strip active field error styles
+    function clearFieldError(inputEl) {
+        inputEl.classList.remove('is-invalid');
+        inputEl.classList.add('is-valid');
+        
+        const errDiv = document.getElementById(`${inputEl.id}-error`);
+        if (errDiv) {
+            errDiv.innerText = "";
+            errDiv.classList.add('d-none');
+        }
+    }
+
+    // Attach premium input listeners when DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('memberName').addEventListener('input', filterNameInput);
+        document.getElementById('caregiverName').addEventListener('input', filterNameInput);
+        
+        document.getElementById('memberPhone').addEventListener('input', filterPhoneInput);
+        document.getElementById('caregiverPhone').addEventListener('input', filterPhoneInput);
+        
+        document.getElementById('memberEmail').addEventListener('input', (e) => {
+            const input = e.target;
+            if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value.trim())) {
+                clearFieldError(input);
+            } else {
+                showFieldError(input, "Please enter a valid email address (e.g. name@domain.com).");
+            }
+        });
+        
+        document.getElementById('caregiverEmail').addEventListener('input', (e) => {
+            const input = e.target;
+            if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value.trim())) {
+                clearFieldError(input);
+            } else {
+                showFieldError(input, "Please enter a valid email address (e.g. name@domain.com).");
+            }
+        });
+        
+        document.getElementById('memberPassword').addEventListener('input', analyzePassword);
+        document.getElementById('memberPassword').addEventListener('input', checkPasswordsMatch);
+        document.getElementById('memberConfirmPassword').addEventListener('input', checkPasswordsMatch);
+        
+        document.getElementById('memberPhone').addEventListener('input', checkCircularPhones);
+        document.getElementById('caregiverPhone').addEventListener('input', checkCircularPhones);
+    });
+
+    // Multi-Step form navigator with validation guards
+    function goToStep(step) {
+        if (step > currentStep) {
+            let isValid = true;
+            if (currentStep === 1) {
+                isValid = validateStep1();
+            } else if (currentStep === 2 && step === 3) {
+                isValid = validateStep2();
+            } else if (currentStep === 3 && step === 4) {
+                isValid = validateStep3();
+            }
+            
+            if (!isValid) return;
+        }
+
+        // Deactivate current step div
+        document.getElementById(`step-${currentStep}`).classList.remove('active');
+        
+        // Activate new step div
+        currentStep = step;
+        document.getElementById(`step-${currentStep}`).classList.add('active');
+
+        // Update progress indicators & headers
+        const indicator = document.getElementById('step-indicator');
+        const progressBar = document.getElementById('form-progress');
+        const percent = document.getElementById('progress-percent');
+        
+        const pctVal = currentStep * 25;
+        progressBar.style.width = `${pctVal}%`;
+        percent.innerText = `${pctVal}%`;
+        
+        switch(currentStep) {
+            case 1:
+                indicator.innerText = "Step 1 of 4: Personal Profile";
+                break;
+            case 2:
+                indicator.innerText = "Step 2 of 4: Delivery Location";
+                break;
+            case 3:
+                indicator.innerText = "Step 3 of 4: Dietary Profile";
+                break;
+            case 4:
+                indicator.innerText = "Step 4 of 4: Caregiver Connection";
+                break;
+        }
+    }
+
+    // Step 1 Validation Guard
+    function validateStep1() {
+        const name = document.getElementById('memberName');
+        const phone = document.getElementById('memberPhone');
+        const email = document.getElementById('memberEmail');
+        const password = document.getElementById('memberPassword');
+        const confirm = document.getElementById('memberConfirmPassword');
+        
+        let isValid = true;
+        
+        if (!name.value.trim()) {
+            showFieldError(name, "Full Name is required.");
+            isValid = false;
+        } else if (name.value.trim().length < 2) {
+            showFieldError(name, "Please enter your full name (at least 2 characters).");
+            isValid = false;
+        } else {
+            clearFieldError(name);
+        }
+        
+        if (!phone.value.trim()) {
+            showFieldError(phone, "Phone Number is required.");
+            isValid = false;
+        } else if (phone.value.trim().length < 6) {
+            showFieldError(phone, "Please enter a valid phone number (at least 6 digits).");
+            isValid = false;
+        } else {
+            clearFieldError(phone);
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email.value.trim()) {
+            showFieldError(email, "Email Address is required.");
+            isValid = false;
+        } else if (!emailRegex.test(email.value.trim())) {
+            showFieldError(email, "Please enter a valid email address.");
+            isValid = false;
+        } else {
+            clearFieldError(email);
+        }
+        
+        if (!password.value) {
+            showFieldError(password, "Password is required.");
+            isValid = false;
+        } else if (password.value.length < 8) {
+            showFieldError(password, "Password must be at least 8 characters long.");
+            isValid = false;
+        } else {
+            clearFieldError(password);
+        }
+        
+        if (!confirm.value) {
+            showFieldError(confirm, "Password confirmation is required.");
+            isValid = false;
+        } else if (password.value !== confirm.value) {
+            showFieldError(confirm, "Passwords do not match.");
+            isValid = false;
+        } else {
+            clearFieldError(confirm);
+        }
+        
+        if (isValid) {
+            if (!checkCircularPhones()) isValid = false;
+        }
+        
+        if (!isValid) {
+            // Apply shake animation to invalid inputs
+            const activeStep = document.getElementById(`step-1`);
+            const invalidControls = activeStep.querySelectorAll('.form-control.is-invalid');
+            invalidControls.forEach(ctrl => {
+                ctrl.classList.add('shake-input');
+                ctrl.addEventListener('animationend', () => ctrl.classList.remove('shake-input'), { once: true });
+            });
+            
+            showToast("Please review form errors before proceeding.", "error", "Form Review Required");
+        }
+        
+        return isValid;
+    }
+
+    // Step 2 Validation Guard
+    function validateStep2() {
+        const addressInput = document.getElementById('memberAddress');
+        
+        if (!addressInput.value.trim()) {
+            showFieldError(addressInput, "Delivery address is required.");
+            showToast("Address validation is required to perform GIS geofencing calculations.", "error", "Address Field Missing");
+            return false;
+        }
+        
+        if (calculatedDistance === null) {
+            showFieldError(addressInput, "GIS perimeter radius audit required.");
+            showToast("Please click 'Verify GIS Eligibility' to compute your delivery perimeter before proceeding.", "warning", "GIS Check Required");
+            return false;
+        }
+        
+        clearFieldError(addressInput);
+        return true;
+    }
+
+    // Step 3 Validation Guard
+    function validateStep3() {
+        return true; // Health and dietary declarations are optional and non-blocking
+    }
+
+    // Step 4 Validation Guard
+    function validateStep4() {
+        const hasCaregiver = document.getElementById('cg-yes').checked;
+        if (!hasCaregiver) return true;
+        
+        const cgName = document.getElementById('caregiverName');
+        const cgPhone = document.getElementById('caregiverPhone');
+        const cgEmail = document.getElementById('caregiverEmail');
+        let stepIsValid = true;
+        
+        if (!cgName.value.trim()) {
+            showFieldError(cgName, "Caregiver Name is required.");
+            stepIsValid = false;
+        } else if (cgName.value.trim().length < 2) {
+            showFieldError(cgName, "Please enter caregiver full name (at least 2 characters).");
+            stepIsValid = false;
+        } else {
+            clearFieldError(cgName);
+        }
+        
+        if (!cgPhone.value.trim()) {
+            showFieldError(cgPhone, "Caregiver Phone is required.");
+            stepIsValid = false;
+        } else if (cgPhone.value.trim().length < 6) {
+            showFieldError(cgPhone, "Please enter caregiver phone (at least 6 digits).");
+            stepIsValid = false;
+        } else {
+            clearFieldError(cgPhone);
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!cgEmail.value.trim()) {
+            showFieldError(cgEmail, "Caregiver Email is required.");
+            stepIsValid = false;
+        } else if (!emailRegex.test(cgEmail.value.trim())) {
+            showFieldError(cgEmail, "Please enter a valid email address (e.g. caregiver@domain.com).");
+            stepIsValid = false;
+        } else {
+            clearFieldError(cgEmail);
+        }
+        
+        if (stepIsValid) {
+            if (!checkCircularPhones()) {
+                stepIsValid = false;
+            }
+        }
+        
+        return stepIsValid;
+    }
+
+    // Toggles Caregiver Form inputs
+    function toggleCaregiverInputs(show) {
+        const fields = document.getElementById('caregiver-fields');
+        const inputs = fields.querySelectorAll('input, select');
+        
+        if (show) {
+            fields.classList.remove('d-none');
+            inputs.forEach(el => el.setAttribute('required', 'true'));
+        } else {
+            fields.classList.add('d-none');
+            inputs.forEach(el => {
+                el.removeAttribute('required');
+                el.value = '';
+                clearFieldError(el);
+            });
+        }
+    }
+
+    // Reset Onboarding Form and Success timeline
+    function resetOnboardingForm() {
+        // Reset form inputs
+        const form = document.getElementById('form-member-multistep');
+        form.reset();
+        document.getElementById('memberLatitude').value = '';
+        document.getElementById('memberLongitude').value = '';
+        form.style.display = 'block';
+        
+        // Clear all validation states and error messages
+        const formControls = form.querySelectorAll('.form-control, .form-select');
+        formControls.forEach(el => {
+            el.classList.remove('is-invalid', 'is-valid');
+        });
+        
+        const errorDivs = form.querySelectorAll('.validation-message');
+        errorDivs.forEach(div => {
+            div.classList.add('d-none');
+            div.innerText = '';
+        });
+        
+        // Hide success hub
+        document.getElementById('success-status-hub').classList.add('d-none');
+        
+        // Reset indicators
+        document.getElementById('drawer-indicators-container').style.display = 'block';
+        
+        calculatedDistance = null;
+        document.getElementById('gis-results-card').classList.add('d-none');
+        document.getElementById('caregiver-fields').classList.add('d-none');
+        
+        // Reset success timeline in case of simulation
+        const timelineItems = document.querySelectorAll('#success-status-hub .timeline-item');
+        if (timelineItems.length >= 4) {
+            // Reset step 3
+            timelineItems[2].classList.remove('success');
+            timelineItems[2].classList.add('active');
+            timelineItems[2].querySelector('.timeline-badge').innerHTML = '<i class="bi bi-hourglass-split"></i>';
+            timelineItems[2].querySelector('h6').className = "fw-bold mb-0 text-primary small";
+            timelineItems[2].querySelector('h6').innerText = "Step 3: Coordinator Eligibility Review";
+            timelineItems[2].querySelector('p').innerText = "Pending manual audit by our Operations Desk staff.";
+            
+            // Reset step 4
+            timelineItems[3].className = "timeline-item";
+            timelineItems[3].querySelector('.timeline-badge').innerHTML = '<i class="bi bi-envelope-check"></i>';
+            timelineItems[3].querySelector('h6').className = "fw-bold mb-0 text-muted small";
+            timelineItems[3].querySelector('h6').innerText = "Step 4: Welcome Credentials Dispatched";
+            timelineItems[3].querySelector('p').innerText = "A welcome email containing your secure credentials will be sent upon coordinator approval.";
+        }
+        
+        // Reset simulation approval container and direct login CTA visibility
+        const approvalBtn = document.getElementById('btn-simulate-approval');
+        if (approvalBtn) {
+            approvalBtn.disabled = false;
+            approvalBtn.innerHTML = '<i class="bi bi-shield-fill-check me-2"></i>Simulate Operations Approval';
+            approvalBtn.className = "btn btn-outline-success w-100 py-3 rounded-pill fw-bold";
+        }
+        
+        document.getElementById('simulation-approval-container').classList.remove('d-none');
+        document.getElementById('direct-login-container').classList.add('d-none');
+        
+        generatedOtpCode = null;
+        
+        goToStep(1);
+    }
+
+    // Dynamic Member Approval & Dispatch Simulator (Success Hub)
+    async function simulateMemberApproval() {
+        const approvalBtn = document.getElementById('btn-simulate-approval');
+        approvalBtn.disabled = true;
+        approvalBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Simulating Approval...';
+        
+        // Dispatch simulated review approval real email via AJAX POST
+        if (registeredMemberEmail) {
+            try {
+                await fetch('/register/approve-simulated/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({
+                        name: registeredMemberName,
+                        email: registeredMemberEmail,
+                        username: registeredMemberUsername
+                    })
+                });
+            } catch (err) {
+                console.error("Simulated review approval email dispatch failed: ", err);
+            }
+        }
+
+        setTimeout(() => {
+            const successHub = document.getElementById('success-status-hub');
+            const timelineItems = successHub.querySelectorAll('.timeline-item');
+            
+            if (timelineItems.length >= 4) {
+                // Step 3 timeline becomes success
+                timelineItems[2].classList.remove('active');
+                timelineItems[2].classList.add('success');
+                timelineItems[2].querySelector('.timeline-badge').innerHTML = '<i class="bi bi-check"></i>';
+                timelineItems[2].querySelector('h6').className = "fw-bold mb-0 text-success small";
+                timelineItems[2].querySelector('p').innerText = "Eligibility audited and approved by Hub Coordinator.";
+                
+                // Step 4 timeline becomes success
+                timelineItems[3].classList.add('success');
+                timelineItems[3].querySelector('.timeline-badge').innerHTML = '<i class="bi bi-envelope-open-fill"></i>';
+                timelineItems[3].querySelector('h6').className = "fw-bold mb-0 text-success small";
+                timelineItems[3].querySelector('h6').innerText = "Step 4: Welcome Credentials Dispatched";
+                timelineItems[3].querySelector('p').innerHTML = "<strong class='text-success'>Success!</strong> A welcome email containing your secure credentials has been dispatched.";
+            }
+            
+            showToast("Simulation Success: User Approved!", "success", "Simulation Approved");
+            
+            // Toggle containers in drawer success status hub
+            document.getElementById('simulation-approval-container').classList.add('d-none');
+            document.getElementById('direct-login-container').classList.remove('d-none');
+        }, 1500);
+    }
+
+    // AJAX POST logic for multi-step Member registration inside Drawer
+    document.getElementById('form-member-multistep').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const isS4Valid = validateStep4();
+        if (!isS4Valid) {
+            showToast("Please review caregiver linkage credentials before submitting.", "error", "Submit Validation Failed");
+            return;
+        }
+
+        const form = e.target;
+        const submitBtn = document.getElementById('btn-submit-member-multistep');
+        const originalText = submitBtn.innerHTML;
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Creating Profile...';
+
+        const formData = new FormData(form);
+
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                // Hide Multi-step form & indicator bar
+                form.style.display = 'none';
+                document.getElementById('drawer-indicators-container').style.display = 'none';
+
+                // Display Timeline Status Hub inside drawer
+                const successHub = document.getElementById('success-status-hub');
+                successHub.classList.remove('d-none');
+                
+                document.getElementById('success-desc-msg').innerText = data.message;
+                
+                // Capture generated OTP code and metadata details for approval trigger
+                generatedOtpCode = data.otp_code;
+                registeredMemberName = data.name || '';
+                registeredMemberEmail = data.email || '';
+                registeredMemberUsername = data.username || '';
+                
+                // Customize timeline GIS text
+                if (data.in_coverage === false || calculatedDistance === -1) {
+                    document.getElementById('timeline-gis-msg').innerHTML = `<strong>Checked:</strong> Address is outside active zones. Automatically queued for Expansion Waitlist.`;
+                    
+                    // Directly style Step 3 as Waitlist Staged
+                    const step3 = document.getElementById('timeline-eligibility-step');
+                    step3.className = "timeline-item success";
+                    step3.querySelector('.timeline-badge').innerHTML = '<i class="bi bi-clock-history"></i>';
+                    step3.querySelector('h6').className = "fw-bold mb-0 text-success small";
+                    step3.querySelector('h6').innerText = "Step 3: Expansion Waitlist Assigned";
+                    step3.querySelector('p').innerText = "Address outside covered districts. Profile saved directly to waitlist queue.";
+                    
+                    // Directly style Step 4 as Waitlist Notification Sent
+                    const step4 = document.getElementById('timeline-credentials-step');
+                    step4.className = "timeline-item success";
+                    step4.querySelector('.timeline-badge').innerHTML = '<i class="bi bi-envelope-check"></i>';
+                    step4.querySelector('h6').className = "fw-bold mb-0 text-success small";
+                    step4.querySelector('h6').innerText = "Step 4: Waitlist Notification Dispatched";
+                    step4.querySelector('p').innerText = "Success! A waitlist status notification email has been automatically dispatched.";
+                    
+                    // Hide simulated operations approval button (no credentials for waitlisted members)
+                    document.getElementById('simulation-approval-container').classList.add('d-none');
+                } else {
+                    const serviceText = calculatedDistance < 10.0 ? "Hot Noon Meal program" : "Frozen Weekend pack program";
+                    document.getElementById('timeline-gis-msg').innerHTML = `<strong>Checked:</strong> Home is <strong>${calculatedDistance}km</strong> away from closest kitchen hub. Qualified for ${serviceText}.`;
+                    
+                    // Keep simulation button visible for review
+                    document.getElementById('simulation-approval-container').classList.remove('d-none');
+                }
+                
+                showToast("Your registration application has been logged!", "success", "Intake Logged");
+            } else {
+                showToast(data.message || "An exception occurred during database storage.", "error", "Registration Failed");
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        } catch (error) {
+            console.error("AJAX submission error: ", error);
+            showToast("An operations connection drop occurred during pipeline dispatch.", "error", "Database Offline");
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    });
+</script>
 {% endblock %}
